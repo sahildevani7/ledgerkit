@@ -1,0 +1,46 @@
+[build-system]
+requires = ["hatchling==1.27.0"]
+build-backend = "hatchling.build"
+
+[project]
+name = "ledgerkit"
+version = "0.1.0"
+description = "A double-entry accounting engine with a CLI"
+readme = "README.md"
+requires-python = ">=3.12"
+license = { text = "MIT" }
+authors = [{ name = "Sahil Devani" }]
+dependencies = []
+
+[project.scripts]
+ledgerkit = "ledgerkit.cli.main:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/ledgerkit"]
+
+[project.optional-dependencies]
+dev = [
+    "pytest==9.1.1",
+    "ruff==0.16.0",
+    "mypy==2.3.0",
+    "coverage==7.15.2",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+files = ["src/ledgerkit"]
+
+[tool.coverage.run]
+source = ["src/ledgerkit"]
