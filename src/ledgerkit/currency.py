@@ -9,6 +9,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from ledgerkit.errors import ValidationError
+
 
 @dataclass(frozen=True, slots=True)
 class Currency:
@@ -33,7 +35,22 @@ class Currency:
 
 CAD = Currency(code="CAD", exponent=2)
 
+_REGISTRY: dict[str, Currency] = {CAD.code: CAD}
+
 
 def default_currency() -> Currency:
     """Return the ledger's base currency."""
     return CAD
+
+
+def get_currency(code: str) -> Currency:
+    """Look up a registered currency by its ISO code.
+
+    Only :data:`CAD` is registered today; storage round-trips a currency
+    code through here rather than assuming CAD, so a future registration
+    of a second currency doesn't require touching the storage layer.
+    """
+    try:
+        return _REGISTRY[code]
+    except KeyError:
+        raise ValidationError(f"unsupported currency: {code!r}") from None
