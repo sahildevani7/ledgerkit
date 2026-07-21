@@ -146,3 +146,41 @@ class TestFiscalCalendar:
         p = cal.fiscal_period(2026)
         assert p.start == date(2026, 7, 1)
         assert p.end == date(2027, 6, 30)
+
+    def test_fiscal_year_end_over_leap_february(self):
+        cal = FiscalCalendar(start_month=3)
+        assert cal.fiscal_year_end(2027) == date(2028, 2, 29)
+
+    def test_fiscal_year_of_boundary_at_calendar_start(self):
+        cal = FiscalCalendar(start_month=10)
+        assert cal.fiscal_year_of(date(2026, 9, 30)) == 2025
+        assert cal.fiscal_year_of(date(2026, 10, 1)) == 2026
+
+    def test_fiscal_period_days_count(self):
+        cal = FiscalCalendar(start_month=1)
+        p = cal.fiscal_period(2026)
+        assert p.days() == 365
+
+    def test_fiscal_period_days_count_leap_year(self):
+        cal = FiscalCalendar(start_month=1)
+        p = cal.fiscal_period(2028)
+        assert p.days() == 366
+
+
+class TestPeriodEdgeCases:
+    def test_period_of_single_day_does_not_overlap_next_day(self):
+        a = Period(start=date(2026, 1, 1), end=date(2026, 1, 1))
+        b = Period(start=date(2026, 1, 2), end=date(2026, 1, 2))
+        assert not a.overlaps(b)
+
+    def test_period_fully_containing_another(self):
+        outer = Period(start=date(2026, 1, 1), end=date(2026, 12, 31))
+        inner = Period(start=date(2026, 6, 1), end=date(2026, 6, 30))
+        assert outer.overlaps(inner)
+        assert inner.overlaps(outer)
+
+    def test_quarter_end_spans_month_boundary_correctly(self):
+        assert quarter_end(date(2026, 4, 1)) == date(2026, 6, 30)
+
+    def test_month_end_of_december_stays_in_same_year(self):
+        assert month_end(date(2026, 12, 15)) == date(2026, 12, 31)
