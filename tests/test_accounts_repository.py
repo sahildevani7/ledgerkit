@@ -126,3 +126,41 @@ def test_set_active_false(repo):
 def test_set_active_missing_raises(repo):
     with pytest.raises(NotFoundError):
         repo.set_active(999, False)  # type: ignore[arg-type]
+
+
+def test_set_active_true_reactivates(repo):
+    a = repo.create(Account(code="1000", name="A", type=AccountType.ASSET))
+    repo.set_active(a.id, False)
+    reactivated = repo.set_active(a.id, True)
+    assert reactivated.is_active
+
+
+def test_reparent_deep_subtree_moves_with_it(repo):
+    a = repo.create(Account(code="1000", name="A", type=AccountType.ASSET))
+    b = repo.create(Account(code="2000", name="B", type=AccountType.LIABILITY))
+    child = repo.create(Account(code="1100", name="Child", type=AccountType.ASSET, parent_id=a.id))
+    grandchild = repo.create(
+        Account(code="1110", name="Grandchild", type=AccountType.ASSET, parent_id=child.id)
+    )
+    repo.reparent(child.id, b.id)
+    chart = repo.chart()
+    assert [acc.code for acc in chart.descendants_of(b.id)] == ["1100", "1110"]
+    assert repo.get(grandchild.id).parent_id == child.id
+
+
+def test_list_all_includes_inactive_accounts(repo):
+    a = repo.create(Account(code="1000", name="A", type=AccountType.ASSET))
+    repo.set_active(a.id, False)
+    codes = [acc.code for acc in repo.list_all()]
+    assert "1000" in codes
+
+
+def test_create_multiple_children_under_same_parent(repo):
+    parent = repo.create(Account(code="1000", name="Assets", type=AccountType.ASSET))
+    repo.create(Account(code="1100", name="Cash", type=AccountType.ASSET, parent_id=parent.id))
+    repo.create(
+        Account(code="1200", name="Receivables", type=AccountType.ASSET, parent_id=parent.id)
+    )
+    chart = repo.chart()
+    codes = [acc.code for acc in chart.children_of(parent.id)]
+    assert codes == ["1100", "1200"]
