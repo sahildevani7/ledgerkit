@@ -131,3 +131,56 @@ def test_format():
     m = Money(Decimal("100"), yen)
     assert m.format() == "100 JPY"
     assert Money(Decimal("10.5")).format() == "10.50 CAD"
+
+
+def test_zero_exponent_currency_rejects_fractional_amount():
+    yen = Currency(code="JPY", exponent=0)
+    with pytest.raises(ValidationError):
+        Money(Decimal("1.5"), yen)
+
+
+def test_addition_with_zero_exponent_currency():
+    yen = Currency(code="JPY", exponent=0)
+    assert Money(Decimal("100"), yen) + Money(Decimal("50"), yen) == Money(Decimal("150"), yen)
+
+
+def test_negative_zero_normalizes_to_zero():
+    assert Money(Decimal("-0.00")) == Money.zero()
+    assert not Money(Decimal("-0.00")).is_negative()
+
+
+def test_large_amount_arithmetic():
+    big = Money(Decimal("999999999999.99"))
+    assert (big + Money(Decimal("0.01"))).amount == Decimal("1000000000000.00")
+
+
+def test_three_way_ordering():
+    low, mid, high = Money(Decimal("1.00")), Money(Decimal("2.00")), Money(Decimal("3.00"))
+    assert sorted([high, low, mid], key=lambda m: m.amount) == [low, mid, high]
+
+
+def test_scaled_by_negative_factor():
+    m = Money(Decimal("10.00"))
+    result = m.scaled(Decimal("-1"), rounding=ROUND_HALF_UP)
+    assert result == Money(Decimal("-10.00"))
+
+
+def test_scaled_by_zero():
+    m = Money(Decimal("10.00"))
+    assert m.scaled(Decimal("0"), rounding=ROUND_HALF_UP).is_zero()
+
+
+def test_from_rounded_negative_amount():
+    m = Money.from_rounded(Decimal("-10.005"), rounding=ROUND_HALF_UP)
+    assert m.amount == Decimal("-10.01")
+
+
+def test_double_negation_is_identity():
+    m = Money(Decimal("5.00"))
+    negated = -m
+    assert -negated == m
+
+
+def test_subtraction_yields_zero_for_equal_amounts():
+    m = Money(Decimal("42.00"))
+    assert (m - m).is_zero()
