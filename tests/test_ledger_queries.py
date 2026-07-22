@@ -114,3 +114,39 @@ def test_activity_includes_memo(migrated_conn, accounts, clock):
     JournalRepository(migrated_conn).create(entry, clock)
     rows = account_activity(migrated_conn, checking.id)
     assert rows[0].memo == "rent"
+
+
+def test_balance_unaffected_by_other_accounts_activity(migrated_conn, accounts, clock):
+    checking, opening = accounts
+    _post(migrated_conn, clock, checking.id, opening.id, "100.00", date(2026, 6, 1))
+    assert account_balance(migrated_conn, opening.id) == Money(Decimal("-100.00"))
+
+
+def test_balance_as_of_before_any_activity_is_zero(migrated_conn, accounts, clock):
+    checking, opening = accounts
+    _post(migrated_conn, clock, checking.id, opening.id, "100.00", date(2026, 6, 15))
+    balance = account_balance(migrated_conn, checking.id, as_of=date(2026, 6, 1))
+    assert balance.is_zero()
+
+
+def test_activity_returns_entry_id(migrated_conn, accounts, clock):
+    checking, opening = accounts
+    posted = _post(migrated_conn, clock, checking.id, opening.id, "10.00", date(2026, 6, 1))
+    rows = account_activity(migrated_conn, checking.id)
+    assert rows[0].entry_id == posted.id
+
+
+def test_activity_reflects_multiple_lines_same_entry(migrated_conn, accounts, clock):
+    checking, opening = accounts
+    entry = JournalEntry(
+        entry_date=date(2026, 6, 1),
+        lines=(
+            Line(account_id=checking.id, amount=Money(Decimal("30.00"))),
+            Line(account_id=opening.id, amount=-Money(Decimal("10.00"))),
+            Line(account_id=opening.id, amount=-Money(Decimal("20.00"))),
+        ),
+    )
+    JournalRepository(migrated_conn).create(entry, clock)
+    rows = account_activity(migrated_conn, opening.id)
+    assert len(rows) == 2
+    assert sorted(r.amount.amount for r in rows) == [Decimal("-20.00"), Decimal("-10.00")]

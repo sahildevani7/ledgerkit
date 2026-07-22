@@ -100,3 +100,43 @@ def test_as_of_date_excludes_later_entries(migrated_conn, accounts, clock):
     tb = build_trial_balance(migrated_conn, as_of=date(2026, 7, 1))
     by_code = {row.account.code: row for row in tb.rows}
     assert by_code["1000"].debit == Money(Decimal("100.00"))
+
+
+def test_as_of_before_any_activity_all_zero(migrated_conn, accounts, clock):
+    checking, loan, opening = accounts
+    entry = JournalEntry(
+        entry_date=date(2026, 7, 1),
+        lines=(
+            Line(account_id=checking.id, amount=Money(Decimal("10.00"))),
+            Line(account_id=opening.id, amount=-Money(Decimal("10.00"))),
+        ),
+    )
+    JournalRepository(migrated_conn).create(entry, clock)
+    tb = build_trial_balance(migrated_conn, as_of=date(2026, 1, 1))
+    assert tb.is_balanced()
+    assert tb.total_debits().is_zero()
+
+
+def test_rows_cover_accounts_with_no_activity(migrated_conn, accounts):
+    tb = build_trial_balance(migrated_conn)
+    by_code = {row.account.code: row for row in tb.rows}
+    assert by_code["2000"].debit.is_zero()
+    assert by_code["2000"].credit.is_zero()
+
+
+def test_multiple_entries_accumulate_correctly(migrated_conn, accounts, clock):
+    checking, loan, opening = accounts
+    repo = JournalRepository(migrated_conn)
+    for amount in ("10.00", "20.00", "30.00"):
+        entry = JournalEntry(
+            entry_date=date(2026, 7, 1),
+            lines=(
+                Line(account_id=checking.id, amount=Money(Decimal(amount))),
+                Line(account_id=opening.id, amount=-Money(Decimal(amount))),
+            ),
+        )
+        repo.create(entry, clock)
+    tb = build_trial_balance(migrated_conn)
+    by_code = {row.account.code: row for row in tb.rows}
+    assert by_code["1000"].debit == Money(Decimal("60.00"))
+    assert by_code["3000"].credit == Money(Decimal("60.00"))
