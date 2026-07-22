@@ -74,3 +74,46 @@ def test_post_batch_rolls_back_entirely_on_unknown_account(migrated_conn, accoun
 
 def test_post_batch_empty_list_is_noop(migrated_conn, clock):
     assert post_batch(migrated_conn, [], clock) == []
+
+
+def test_post_batch_preserves_order(migrated_conn, accounts, clock):
+    checking, opening = accounts
+    entries = [
+        _entry(checking.id, opening.id, "1.00", date(2026, 6, 1)),
+        _entry(checking.id, opening.id, "2.00", date(2026, 6, 2)),
+        _entry(checking.id, opening.id, "3.00", date(2026, 6, 3)),
+    ]
+    posted = post_batch(migrated_conn, entries, clock)
+    assert [p.entry_date for p in posted] == [date(2026, 6, 1), date(2026, 6, 2), date(2026, 6, 3)]
+
+
+def test_post_batch_bad_second_entry_rolls_back_first(migrated_conn, accounts, clock):
+    checking, opening = accounts
+    good = _entry(checking.id, opening.id, "10.00")
+    bad = JournalEntry(
+        entry_date=date(2026, 6, 21),
+        lines=(
+            Line(account_id=checking.id, amount=Money(Decimal("5.00"))),
+            Line(account_id=AccountId(12345), amount=-Money(Decimal("5.00"))),
+        ),
+    )
+    with pytest.raises(NotFoundError):
+        post_batch(migrated_conn, [good, bad], clock)
+    assert JournalRepository(migrated_conn).list_all() == []
+    from ledgerkit.ledger.queries import account_balance
+
+    assert account_balance(migrated_conn, checking.id).is_zero()
+
+
+def test_post_single_entry_three_lines(migrated_conn, accounts, clock):
+    checking, opening = accounts
+    entry = JournalEntry(
+        entry_date=date(2026, 6, 21),
+        lines=(
+            Line(account_id=checking.id, amount=Money(Decimal("30.00"))),
+            Line(account_id=opening.id, amount=-Money(Decimal("10.00"))),
+            Line(account_id=opening.id, amount=-Money(Decimal("20.00"))),
+        ),
+    )
+    posted = post(migrated_conn, entry, clock)
+    assert len(posted.lines) == 3
