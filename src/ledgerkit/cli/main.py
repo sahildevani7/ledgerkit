@@ -10,7 +10,7 @@ import argparse
 import sys
 from collections.abc import Sequence
 
-from ledgerkit.cli import cmd_balance, cmd_import, cmd_post, cmd_report
+from ledgerkit.cli import cmd_accounts, cmd_balance, cmd_import, cmd_post, cmd_report
 from ledgerkit.clock import SystemClock
 from ledgerkit.errors import LedgerError
 from ledgerkit.storage.engine import Engine
@@ -23,6 +23,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("--db", default="ledger.db", help="path to the SQLite database")
     subparsers = parser.add_subparsers(dest="command", required=True)
+    cmd_accounts.add_arguments(subparsers)
     cmd_import.add_arguments(subparsers)
     cmd_post.add_arguments(subparsers)
     cmd_balance.add_arguments(subparsers)
