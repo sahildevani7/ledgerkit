@@ -40,26 +40,13 @@ Requires Python 3.12+.
 ## Quick start
 
 The database file is created and migrated automatically the first time any
-command touches it — there's no separate init step. The chart of accounts
-is set up through the library rather than the CLI:
-
-```python
-from ledgerkit.accounts.model import Account, AccountType
-from ledgerkit.accounts.repository import AccountRepository
-from ledgerkit.clock import SystemClock
-from ledgerkit.storage.engine import Engine
-from ledgerkit.storage.migrations.runner import apply_migrations
-
-connection = Engine("ledger.db").connect()
-apply_migrations(connection, SystemClock())
-repo = AccountRepository(connection)
-repo.create(Account(code="1000", name="Checking", type=AccountType.ASSET))
-repo.create(Account(code="3000", name="Opening Balance", type=AccountType.EQUITY))
-```
-
-Then the CLI handles importing, posting, and reporting:
+command touches it — there's no separate init step.
 
 ```bash
+# set up a chart of accounts
+ledgerkit --db ledger.db accounts create 1000 Checking asset
+ledgerkit --db ledger.db accounts create 3000 "Opening Balance" equity
+
 # import a CSV bank statement
 ledgerkit --db ledger.db import statement.csv --account 1000 --contra-account 3000
 
