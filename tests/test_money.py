@@ -184,3 +184,84 @@ def test_double_negation_is_identity():
 def test_subtraction_yields_zero_for_equal_amounts():
     m = Money(Decimal("42.00"))
     assert (m - m).is_zero()
+
+
+def test_parse_basic():
+    assert Money.parse("10.00") == Money(Decimal("10.00"))
+
+
+def test_parse_strips_whitespace():
+    assert Money.parse("  -4.50  ") == Money(Decimal("-4.50"))
+
+
+def test_parse_rejects_garbage():
+    with pytest.raises(ValidationError):
+        Money.parse("not-a-number")
+
+
+def test_parse_rejects_excess_precision():
+    with pytest.raises(ValidationError):
+        Money.parse("1.005")
+
+
+def test_parse_with_explicit_currency():
+    yen = Currency(code="JPY", exponent=0)
+    assert Money.parse("100", yen) == Money(Decimal("100"), yen)
+
+
+def test_allocate_even_split():
+    parts = Money(Decimal("10.00")).allocate([1, 1])
+    assert parts == [Money(Decimal("5.00")), Money(Decimal("5.00"))]
+
+
+def test_allocate_uneven_split_distributes_remainder():
+    parts = Money(Decimal("10.00")).allocate([1, 1, 1])
+    assert parts == [Money(Decimal("3.34")), Money(Decimal("3.33")), Money(Decimal("3.33"))]
+
+
+def test_allocate_parts_sum_to_original():
+    total = Money(Decimal("100.07"))
+    parts = total.allocate([3, 2, 1, 1])
+    summed = Money.zero()
+    for part in parts:
+        summed = summed + part
+    assert summed == total
+
+
+def test_allocate_weighted_ratios():
+    parts = Money(Decimal("300.00")).allocate([2, 1])
+    assert parts == [Money(Decimal("200.00")), Money(Decimal("100.00"))]
+
+
+def test_allocate_single_ratio_returns_whole_amount():
+    total = Money(Decimal("42.42"))
+    assert total.allocate([1]) == [total]
+
+
+def test_allocate_rejects_empty_ratios():
+    with pytest.raises(ValidationError):
+        Money(Decimal("10.00")).allocate([])
+
+
+def test_allocate_rejects_zero_ratio():
+    with pytest.raises(ValidationError):
+        Money(Decimal("10.00")).allocate([1, 0])
+
+
+def test_allocate_rejects_negative_ratio():
+    with pytest.raises(ValidationError):
+        Money(Decimal("10.00")).allocate([1, -1])
+
+
+def test_allocate_negative_amount():
+    parts = Money(Decimal("-10.00")).allocate([1, 1, 1])
+    summed = Money.zero()
+    for part in parts:
+        summed = summed + part
+    assert summed == Money(Decimal("-10.00"))
+
+
+def test_allocate_preserves_currency():
+    yen = Currency(code="JPY", exponent=0)
+    parts = Money(Decimal("10"), yen).allocate([1, 1])
+    assert all(part.currency == yen for part in parts)
