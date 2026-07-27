@@ -2,7 +2,10 @@
 
 Everything here is pure date arithmetic: no clock reads, no I/O. Callers get
 the current date from an injected :class:`~ledgerkit.clock.Clock` and pass it
-in explicitly.
+in explicitly. Nothing in this module reasons about recurring schedules or
+open-ended rules — it only ever computes the boundaries of a single,
+already-known period (a month, a quarter, a fiscal year, an arbitrary
+range).
 """
 
 from __future__ import annotations
@@ -15,15 +18,36 @@ from ledgerkit.errors import ValidationError
 
 
 def month_start(d: date) -> date:
+    """The first day of the month ``d`` falls in."""
     return d.replace(day=1)
 
 
 def month_end(d: date) -> date:
+    """The last day of the month ``d`` falls in, accounting for leap years."""
     last_day = calendar.monthrange(d.year, d.month)[1]
     return d.replace(day=last_day)
 
 
+def week_start(d: date, *, first_weekday: int = 0) -> date:
+    """The first day of the calendar week ``d`` falls in.
+
+    Args:
+        d: Any date within the target week.
+        first_weekday: Which weekday a week starts on, using Python's
+            ``date.weekday()`` numbering (``0`` is Monday, ``6`` is
+            Sunday). Defaults to Monday, the ISO 8601 convention.
+    """
+    offset = (d.weekday() - first_weekday) % 7
+    return d - timedelta(days=offset)
+
+
+def week_end(d: date, *, first_weekday: int = 0) -> date:
+    """The last day of the calendar week ``d`` falls in. See :func:`week_start`."""
+    return week_start(d, first_weekday=first_weekday) + timedelta(days=6)
+
+
 def quarter_of(d: date) -> int:
+    """Which calendar quarter (1-4) ``d`` falls in."""
     return (d.month - 1) // 3 + 1
 
 
@@ -60,18 +84,41 @@ class Period:
 
     def __post_init__(self) -> None:
         if self.start > self.end:
-            raise ValidationError(
-                f"period start {self.start} is after end {self.end}"
-            )
+            raise ValidationError(f"period start {self.start} is after end {self.end}")
 
     def contains(self, d: date) -> bool:
         return self.start <= d <= self.end
 
     def overlaps(self, other: Period) -> bool:
+        """Whether this period shares at least one day with ``other``.
+
+        Periods that only touch at a shared boundary day count as
+        overlapping — a period ending on the day another begins is not
+        disjoint from it.
+        """
         return self.start <= other.end and other.start <= self.end
 
     def days(self) -> int:
         return (self.end - self.start).days + 1
+
+    def split_by_month(self) -> list[Period]:
+        """Break this period into calendar-month-aligned sub-periods.
+
+        The first and last sub-periods are clipped to this period's actual
+        start and end; every sub-period in between spans a full calendar
+        month. Useful for reporting month-by-month over an arbitrary
+        range without special-casing the partial months at either end.
+
+        Returns:
+            Sub-periods in chronological order, always non-empty.
+        """
+        segments: list[Period] = []
+        cursor = self.start
+        while cursor <= self.end:
+            segment_end = min(month_end(cursor), self.end)
+            segments.append(Period(start=cursor, end=segment_end))
+            cursor = segment_end + timedelta(days=1)
+        return segments
 
 
 @dataclass(frozen=True, slots=True)
