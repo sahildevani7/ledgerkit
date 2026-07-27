@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import date
+from datetime import date, timedelta
 
 import pytest
 
@@ -13,6 +13,8 @@ from ledgerkit.dates import (
     quarter_end,
     quarter_of,
     quarter_start,
+    week_end,
+    week_start,
     year_end,
     year_start,
 )
@@ -184,3 +186,59 @@ class TestPeriodEdgeCases:
 
     def test_month_end_of_december_stays_in_same_year(self):
         assert month_end(date(2026, 12, 15)) == date(2026, 12, 31)
+
+
+class TestWeekHelpers:
+    def test_week_start_default_monday(self):
+        # 2026-07-30 is a Thursday
+        assert week_start(date(2026, 7, 30)) == date(2026, 7, 27)
+
+    def test_week_end_default_sunday(self):
+        assert week_end(date(2026, 7, 30)) == date(2026, 8, 2)
+
+    def test_week_start_on_the_boundary_day_is_itself(self):
+        monday = date(2026, 7, 27)
+        assert week_start(monday) == monday
+
+    def test_week_start_custom_first_weekday_sunday(self):
+        # first_weekday=6 means weeks start on Sunday
+        assert week_start(date(2026, 7, 30), first_weekday=6) == date(2026, 7, 26)
+
+    def test_week_span_is_seven_days(self):
+        start = week_start(date(2026, 7, 30))
+        end = week_end(date(2026, 7, 30))
+        assert (end - start).days == 6
+
+
+class TestSplitByMonth:
+    def test_single_month_period_returns_one_segment(self):
+        p = Period(start=date(2026, 3, 5), end=date(2026, 3, 20))
+        segments = p.split_by_month()
+        assert segments == [p]
+
+    def test_spans_two_months(self):
+        p = Period(start=date(2026, 3, 20), end=date(2026, 4, 10))
+        segments = p.split_by_month()
+        assert segments == [
+            Period(start=date(2026, 3, 20), end=date(2026, 3, 31)),
+            Period(start=date(2026, 4, 1), end=date(2026, 4, 10)),
+        ]
+
+    def test_spans_full_calendar_year(self):
+        p = Period(start=date(2026, 1, 1), end=date(2026, 12, 31))
+        segments = p.split_by_month()
+        assert len(segments) == 12
+        assert segments[0] == Period(start=date(2026, 1, 1), end=date(2026, 1, 31))
+        assert segments[-1] == Period(start=date(2026, 12, 1), end=date(2026, 12, 31))
+
+    def test_segments_cover_period_with_no_gaps_or_overlaps(self):
+        p = Period(start=date(2026, 2, 10), end=date(2026, 5, 3))
+        segments = p.split_by_month()
+        for earlier, later in zip(segments, segments[1:], strict=False):
+            assert later.start == earlier.end + timedelta(days=1)
+        assert segments[0].start == p.start
+        assert segments[-1].end == p.end
+
+    def test_single_day_period(self):
+        p = Period(start=date(2026, 6, 15), end=date(2026, 6, 15))
+        assert p.split_by_month() == [p]
