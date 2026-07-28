@@ -3,6 +3,15 @@
 Configuration is a small, flat set of scalars — no nested sections, no
 plugins. It can come from a TOML file, an environment mapping, or explicit
 keyword overrides, applied in that order (each layer overrides the last).
+
+A typical config file, ``ledgerkit.toml``, looks like::
+
+    db_path = "ledger.db"
+    fiscal_year_start_month = 4
+    default_currency_code = "CAD"
+
+Unknown keys are rejected rather than silently ignored, since a typo in a
+config file is otherwise invisible.
 """
 
 from __future__ import annotations
@@ -15,6 +24,7 @@ from pathlib import Path
 from ledgerkit.errors import ConfigError
 
 _ENV_PREFIX = "LEDGERKIT_"
+_CONFIG_FILENAME = "ledgerkit.toml"
 
 _FIELD_TYPES: dict[str, type] = {}
 
@@ -89,3 +99,28 @@ def load_config(
         return LedgerConfig(**values)  # type: ignore[arg-type]
     except TypeError as exc:
         raise ConfigError(f"invalid configuration: {exc}") from exc
+
+
+def find_config_file(start: Path) -> Path | None:
+    """Search ``start`` and its ancestors for a ``ledgerkit.toml``.
+
+    Mirrors how tools like git and pytest locate their config: starting
+    from a working directory and walking upward, so a config file at a
+    project's root is found regardless of which subdirectory a command is
+    run from.
+
+    Args:
+        start: The directory to begin searching from.
+
+    Returns:
+        The first ``ledgerkit.toml`` found, or ``None`` if none of
+        ``start``'s ancestors (including ``start`` itself) has one.
+    """
+    current = start.resolve()
+    while True:
+        candidate = current / _CONFIG_FILENAME
+        if candidate.is_file():
+            return candidate
+        if current.parent == current:
+            return None
+        current = current.parent
