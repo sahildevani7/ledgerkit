@@ -98,3 +98,34 @@ def test_rejects_unpersisted_accounts():
     unpersisted = Account(code="1000", name="Cash", type=AccountType.ASSET)
     with pytest.raises(ValueError):
         ChartOfAccounts([unpersisted])
+
+
+def test_depth_of_root_is_zero(chart):
+    assert chart.depth_of(AccountId(1)) == 0
+
+
+def test_depth_of_leaf(chart):
+    assert chart.depth_of(AccountId(3)) == 2
+
+
+def test_path_to_root(chart):
+    path = chart.path_to(AccountId(1))
+    assert [a.code for a in path] == ["1000"]
+
+
+def test_path_to_leaf(chart):
+    path = chart.path_to(AccountId(3))
+    assert [a.code for a in path] == ["1000", "1100", "1110"]
+
+
+def test_path_to_missing_raises(chart):
+    with pytest.raises(NotFoundError):
+        chart.path_to(AccountId(999))
+
+
+def test_is_root_true_for_root(chart):
+    assert chart.is_root(AccountId(1))
+
+
+def test_is_root_false_for_child(chart):
+    assert not chart.is_root(AccountId(2))

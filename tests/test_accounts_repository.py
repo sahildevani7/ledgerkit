@@ -164,3 +164,48 @@ def test_create_multiple_children_under_same_parent(repo):
     chart = repo.chart()
     codes = [acc.code for acc in chart.children_of(parent.id)]
     assert codes == ["1100", "1200"]
+
+
+def test_exists_true_after_create(repo):
+    repo.create(Account(code="1000", name="A", type=AccountType.ASSET))
+    assert repo.exists("1000")
+
+
+def test_exists_false_for_unknown_code(repo):
+    assert not repo.exists("no-such-code")
+
+
+def test_count_starts_at_zero(repo):
+    assert repo.count() == 0
+
+
+def test_count_reflects_created_accounts(repo):
+    repo.create(Account(code="1000", name="A", type=AccountType.ASSET))
+    repo.create(Account(code="2000", name="B", type=AccountType.LIABILITY))
+    assert repo.count() == 2
+
+
+def test_count_includes_inactive(repo):
+    a = repo.create(Account(code="1000", name="A", type=AccountType.ASSET))
+    repo.set_active(a.id, False)
+    assert repo.count() == 1
+
+
+def test_search_by_prefix(repo):
+    repo.create(Account(code="1000", name="Assets", type=AccountType.ASSET))
+    repo.create(Account(code="1100", name="Cash", type=AccountType.ASSET))
+    repo.create(Account(code="2000", name="Liabilities", type=AccountType.LIABILITY))
+    codes = [a.code for a in repo.search("1")]
+    assert codes == ["1000", "1100"]
+
+
+def test_search_no_matches_returns_empty(repo):
+    repo.create(Account(code="1000", name="Assets", type=AccountType.ASSET))
+    assert repo.search("9") == []
+
+
+def test_search_exact_code_prefix_only(repo):
+    repo.create(Account(code="1000", name="Assets", type=AccountType.ASSET))
+    repo.create(Account(code="1000-A", name="Sub", type=AccountType.ASSET))
+    codes = [a.code for a in repo.search("1000")]
+    assert codes == ["1000", "1000-A"]
