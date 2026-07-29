@@ -86,6 +86,29 @@ class AccountRepository:
         )
         return self.get(account_id)
 
+    def exists(self, code: str) -> bool:
+        """Whether an account with ``code`` has been created."""
+        row = self._conn.execute("SELECT 1 FROM accounts WHERE code = ?", (code,)).fetchone()
+        return row is not None
+
+    def count(self) -> int:
+        """The total number of accounts, active and inactive."""
+        (total,) = self._conn.execute("SELECT COUNT(*) FROM accounts").fetchone()
+        return int(total)
+
+    def search(self, code_prefix: str) -> list[Account]:
+        """Accounts whose code starts with ``code_prefix``, sorted by code.
+
+        Useful for a chart of accounts organized by numeric range (e.g.
+        every ``1xxx`` code is an asset) — ``search("1")`` finds them all
+        without the caller needing to know the full hierarchy.
+        """
+        rows = self._conn.execute(
+            f"SELECT {_SELECT_COLUMNS} FROM accounts WHERE code LIKE ? ORDER BY code",
+            (f"{code_prefix}%",),
+        ).fetchall()
+        return [_row_to_account(r) for r in rows]
+
 
 def _row_to_account(row: sqlite3.Row) -> Account:
     return Account(
