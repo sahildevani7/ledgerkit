@@ -82,3 +82,20 @@ class ChartOfAccounts:
 
     def all_accounts(self) -> list[Account]:
         return sorted(self._by_id.values(), key=lambda a: a.code)
+
+    def depth_of(self, account_id: AccountId) -> int:
+        """How many ancestors ``account_id`` has; ``0`` for a root account."""
+        return len(self.ancestors_of(account_id))
+
+    def path_to(self, account_id: AccountId) -> list[Account]:
+        """The breadcrumb path from the root down to ``account_id``, inclusive.
+
+        This is :meth:`ancestors_of` reversed with the account itself
+        appended — convenient for rendering something like
+        ``Assets > Current Assets > Cash`` without the caller having to
+        remember which order ``ancestors_of`` returns things in.
+        """
+        return [*reversed(self.ancestors_of(account_id)), self.get(account_id)]
+
+    def is_root(self, account_id: AccountId) -> bool:
+        return self.get(account_id).parent_id is None
