@@ -9,7 +9,7 @@ from ledgerkit.accounts.model import Account, AccountType
 from ledgerkit.accounts.repository import AccountRepository
 from ledgerkit.clock import FixedClock
 from ledgerkit.errors import NotFoundError, ValidationError
-from ledgerkit.ids import EntryId
+from ledgerkit.ids import EntryId, ImportBatchId
 from ledgerkit.journal.entry import JournalEntry, Line
 from ledgerkit.journal.repository import JournalRepository
 from ledgerkit.money import Money
@@ -131,3 +131,38 @@ def test_import_batch_id_defaults_to_none(repo, accounts, clock):
     checking, opening = accounts
     created = repo.create(_entry(checking, opening), clock)
     assert created.import_batch_id is None
+
+
+def test_count_starts_at_zero(repo):
+    assert repo.count() == 0
+
+
+def test_count_reflects_created_entries(repo, accounts, clock):
+    checking, opening = accounts
+    repo.create(_entry(checking, opening), clock)
+    repo.create(_entry(checking, opening), clock)
+    assert repo.count() == 2
+
+
+def test_list_for_import_batch(repo, accounts, clock, migrated_conn):
+    checking, opening = accounts
+    from dataclasses import replace
+
+    cursor = migrated_conn.execute(
+        "INSERT INTO import_batches (account_id, source_name, imported_at, row_count) "
+        "VALUES (?, ?, ?, ?)",
+        (checking.id, "statement.csv", clock.now().isoformat(), 1),
+    )
+    batch_id = ImportBatchId(cursor.lastrowid)
+
+    tagged = replace(_entry(checking, opening), import_batch_id=batch_id)
+    untagged = _entry(checking, opening)
+    created_tagged = repo.create(tagged, clock)
+    repo.create(untagged, clock)
+
+    entries = repo.list_for_import_batch(batch_id)
+    assert [e.id for e in entries] == [created_tagged.id]
+
+
+def test_list_for_import_batch_no_matches_returns_empty(repo):
+    assert repo.list_for_import_batch(ImportBatchId(999)) == []

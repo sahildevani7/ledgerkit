@@ -95,3 +95,47 @@ def test_entry_memo_optional():
         lines=(_line(1, "10.00"), _line(2, "-10.00")),
     )
     assert entry.memo is None
+
+
+def test_involves_account_true():
+    entry = JournalEntry(
+        entry_date=date(2026, 6, 20),
+        lines=(_line(1, "10.00"), _line(2, "-10.00")),
+    )
+    assert entry.involves_account(AccountId(1))
+    assert entry.involves_account(AccountId(2))
+
+
+def test_involves_account_false():
+    entry = JournalEntry(
+        entry_date=date(2026, 6, 20),
+        lines=(_line(1, "10.00"), _line(2, "-10.00")),
+    )
+    assert not entry.involves_account(AccountId(3))
+
+
+def test_lines_for_account_single_match():
+    entry = JournalEntry(
+        entry_date=date(2026, 6, 20),
+        lines=(_line(1, "10.00"), _line(2, "-10.00")),
+    )
+    lines = entry.lines_for_account(AccountId(1))
+    assert len(lines) == 1
+    assert lines[0].amount == Money(Decimal("10.00"))
+
+
+def test_lines_for_account_multiple_matches():
+    entry = JournalEntry(
+        entry_date=date(2026, 6, 20),
+        lines=(_line(1, "6.00"), _line(1, "4.00"), _line(2, "-10.00")),
+    )
+    lines = entry.lines_for_account(AccountId(1))
+    assert len(lines) == 2
+
+
+def test_lines_for_account_no_match_returns_empty_tuple():
+    entry = JournalEntry(
+        entry_date=date(2026, 6, 20),
+        lines=(_line(1, "10.00"), _line(2, "-10.00")),
+    )
+    assert entry.lines_for_account(AccountId(99)) == ()
