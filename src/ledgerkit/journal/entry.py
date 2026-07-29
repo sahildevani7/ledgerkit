@@ -80,3 +80,16 @@ class JournalEntry:
             if line.is_credit:
                 result = result + (-line.amount)
         return result
+
+    def involves_account(self, account_id: AccountId) -> bool:
+        """Whether any line in this entry posts against ``account_id``."""
+        return any(line.account_id == account_id for line in self.lines)
+
+    def lines_for_account(self, account_id: AccountId) -> tuple[Line, ...]:
+        """Every line in this entry that posts against ``account_id``.
+
+        Usually a single line, but an entry can legitimately post more than
+        one line to the same account (splitting a payment across
+        categories that happen to share an account, for instance).
+        """
+        return tuple(line for line in self.lines if line.account_id == account_id)
