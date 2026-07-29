@@ -59,17 +59,10 @@ class JournalRepository:
         ).fetchone()
         if entry_row is None:
             raise NotFoundError(f"no journal entry with id {entry_id}")
-        line_rows = self._conn.execute(
-            "SELECT id, account_id, amount, currency_code FROM journal_lines "
-            "WHERE entry_id = ? ORDER BY id",
-            (entry_id,),
-        ).fetchall()
-        return _row_to_entry(entry_row, line_rows)
+        return _row_to_entry(entry_row, self._fetch_lines(entry_row["id"]))
 
     def list_all(self, *, start: date | None = None, end: date | None = None) -> list[JournalEntry]:
-        query = (
-            "SELECT id, entry_date, memo, created_at, import_batch_id FROM journal_entries"
-        )
+        query = "SELECT id, entry_date, memo, created_at, import_batch_id FROM journal_entries"
         clauses: list[str] = []
         params: list[str] = []
         if start is not None:
@@ -82,16 +75,32 @@ class JournalRepository:
             query += " WHERE " + " AND ".join(clauses)
         query += " ORDER BY entry_date, id"
         entry_rows = self._conn.execute(query, params).fetchall()
+        return [
+            _row_to_entry(entry_row, self._fetch_lines(entry_row["id"])) for entry_row in entry_rows
+        ]
 
-        entries: list[JournalEntry] = []
-        for entry_row in entry_rows:
-            line_rows = self._conn.execute(
-                "SELECT id, account_id, amount, currency_code FROM journal_lines "
-                "WHERE entry_id = ? ORDER BY id",
-                (entry_row["id"],),
-            ).fetchall()
-            entries.append(_row_to_entry(entry_row, line_rows))
-        return entries
+    def list_for_import_batch(self, import_batch_id: ImportBatchId) -> list[JournalEntry]:
+        """Every entry created as part of a given import batch, oldest first."""
+        entry_rows = self._conn.execute(
+            "SELECT id, entry_date, memo, created_at, import_batch_id FROM journal_entries "
+            "WHERE import_batch_id = ? ORDER BY id",
+            (import_batch_id,),
+        ).fetchall()
+        return [
+            _row_to_entry(entry_row, self._fetch_lines(entry_row["id"])) for entry_row in entry_rows
+        ]
+
+    def count(self) -> int:
+        """The total number of posted journal entries."""
+        (total,) = self._conn.execute("SELECT COUNT(*) FROM journal_entries").fetchone()
+        return int(total)
+
+    def _fetch_lines(self, entry_id: int) -> list[sqlite3.Row]:
+        return self._conn.execute(
+            "SELECT id, account_id, amount, currency_code FROM journal_lines "
+            "WHERE entry_id = ? ORDER BY id",
+            (entry_id,),
+        ).fetchall()
 
 
 def _row_to_entry(entry_row: sqlite3.Row, line_rows: list[sqlite3.Row]) -> JournalEntry:
