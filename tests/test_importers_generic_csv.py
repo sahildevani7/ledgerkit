@@ -17,9 +17,7 @@ def importer():
 
 def test_parses_valid_rows(importer):
     content = (
-        "date,description,amount\n"
-        "2026-07-11,Coffee Shop,-4.50\n"
-        "2026-07-12,Paycheque,1500.00\n"
+        "date,description,amount\n2026-07-11,Coffee Shop,-4.50\n2026-07-12,Paycheque,1500.00\n"
     )
     transactions = importer.parse(content)
     assert len(transactions) == 2

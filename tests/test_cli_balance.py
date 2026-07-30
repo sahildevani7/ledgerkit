@@ -12,10 +12,15 @@ def test_balance_zero_for_new_account(cli_db, capsys):
 def test_balance_after_posting(cli_db, capsys):
     main(
         [
-            "--db", cli_db, "post",
-            "--debit", "1000:75.00",
-            "--credit", "3000:75.00",
-            "--entry-date", "2026-07-17",
+            "--db",
+            cli_db,
+            "post",
+            "--debit",
+            "1000:75.00",
+            "--credit",
+            "3000:75.00",
+            "--entry-date",
+            "2026-07-17",
         ]
     )
     capsys.readouterr()
@@ -26,10 +31,15 @@ def test_balance_after_posting(cli_db, capsys):
 def test_balance_as_of_excludes_later_entries(cli_db, capsys):
     main(
         [
-            "--db", cli_db, "post",
-            "--debit", "1000:75.00",
-            "--credit", "3000:75.00",
-            "--entry-date", "2026-08-01",
+            "--db",
+            cli_db,
+            "post",
+            "--debit",
+            "1000:75.00",
+            "--credit",
+            "3000:75.00",
+            "--entry-date",
+            "2026-08-01",
         ]
     )
     capsys.readouterr()

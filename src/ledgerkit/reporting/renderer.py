@@ -27,8 +27,6 @@ class Renderer(Protocol):
         """Render a full trial balance: every account, debits, credits, totals."""
         ...
 
-    def render_account_activity(
-        self, account: Account, activity: Sequence[AccountActivity]
-    ) -> str:
+    def render_account_activity(self, account: Account, activity: Sequence[AccountActivity]) -> str:
         """Render one account's transaction history, oldest first."""
         ...

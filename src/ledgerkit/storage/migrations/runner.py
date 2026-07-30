@@ -65,8 +65,7 @@ def apply_migrations(
             )
         conn.executescript(migration.sql)
         conn.execute(
-            f"INSERT INTO {SCHEMA_MIGRATIONS} (version, name, applied_at) "
-            "VALUES (?, ?, ?)",
+            f"INSERT INTO {SCHEMA_MIGRATIONS} (version, name, applied_at) VALUES (?, ?, ?)",
             (migration.version, migration.name, applied_at),
         )
         current = migration.version

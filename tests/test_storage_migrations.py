@@ -68,8 +68,10 @@ def test_resumes_from_partial_state(conn, clock):
 
 
 def test_migration_gap_raises(conn, clock):
-    gapped = (Migration(version=1, name="a", sql="CREATE TABLE a (id INTEGER);"),
-              Migration(version=3, name="c", sql="CREATE TABLE c (id INTEGER);"))
+    gapped = (
+        Migration(version=1, name="a", sql="CREATE TABLE a (id INTEGER);"),
+        Migration(version=3, name="c", sql="CREATE TABLE c (id INTEGER);"),
+    )
     with pytest.raises(StorageError):
         apply_migrations(conn, clock, gapped)
 

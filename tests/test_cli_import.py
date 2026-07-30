@@ -8,9 +8,7 @@ from ledgerkit.cli.main import main
 def _write_statement(tmp_path: Path) -> Path:
     path = tmp_path / "statement.csv"
     path.write_text(
-        "date,description,amount\n"
-        "2026-07-16,Coffee Shop,-4.50\n"
-        "2026-07-17,Paycheque,200.00\n"
+        "date,description,amount\n2026-07-16,Coffee Shop,-4.50\n2026-07-17,Paycheque,200.00\n"
     )
     return path
 
@@ -19,8 +17,14 @@ def test_import_posts_all_transactions(cli_db, tmp_path, capsys):
     statement = _write_statement(tmp_path)
     exit_code = main(
         [
-            "--db", cli_db, "import", str(statement),
-            "--account", "1000", "--contra-account", "3000",
+            "--db",
+            cli_db,
+            "import",
+            str(statement),
+            "--account",
+            "1000",
+            "--contra-account",
+            "3000",
         ]
     )
     assert exit_code == 0
@@ -31,8 +35,14 @@ def test_import_updates_balance(cli_db, tmp_path, capsys):
     statement = _write_statement(tmp_path)
     main(
         [
-            "--db", cli_db, "import", str(statement),
-            "--account", "1000", "--contra-account", "3000",
+            "--db",
+            cli_db,
+            "import",
+            str(statement),
+            "--account",
+            "1000",
+            "--contra-account",
+            "3000",
         ]
     )
     capsys.readouterr()
@@ -44,8 +54,14 @@ def test_import_missing_file_returns_exit_code_one(cli_db, tmp_path):
     missing = tmp_path / "nope.csv"
     exit_code = main(
         [
-            "--db", cli_db, "import", str(missing),
-            "--account", "1000", "--contra-account", "3000",
+            "--db",
+            cli_db,
+            "import",
+            str(missing),
+            "--account",
+            "1000",
+            "--contra-account",
+            "3000",
         ]
     )
     assert exit_code == 1
@@ -55,8 +71,14 @@ def test_import_unknown_account_returns_exit_code_one(cli_db, tmp_path):
     statement = _write_statement(tmp_path)
     exit_code = main(
         [
-            "--db", cli_db, "import", str(statement),
-            "--account", "9999", "--contra-account", "3000",
+            "--db",
+            cli_db,
+            "import",
+            str(statement),
+            "--account",
+            "9999",
+            "--contra-account",
+            "3000",
         ]
     )
     assert exit_code == 1
@@ -69,8 +91,14 @@ def test_import_bad_csv_rolls_back_everything(cli_db, tmp_path, capsys):
     )
     exit_code = main(
         [
-            "--db", cli_db, "import", str(bad_statement),
-            "--account", "1000", "--contra-account", "3000",
+            "--db",
+            cli_db,
+            "import",
+            str(bad_statement),
+            "--account",
+            "1000",
+            "--contra-account",
+            "3000",
         ]
     )
     assert exit_code == 1
@@ -84,8 +112,16 @@ def test_import_unknown_dialect_returns_exit_code_one(cli_db, tmp_path):
     statement = _write_statement(tmp_path)
     exit_code = main(
         [
-            "--db", cli_db, "import", str(statement),
-            "--account", "1000", "--contra-account", "3000", "--dialect", "no-such-dialect",
+            "--db",
+            cli_db,
+            "import",
+            str(statement),
+            "--account",
+            "1000",
+            "--contra-account",
+            "3000",
+            "--dialect",
+            "no-such-dialect",
         ]
     )
     assert exit_code == 1

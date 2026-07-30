@@ -13,7 +13,7 @@ currency's minor unit, and it never accepts a float as input at all.
 ## Construction is exact by default
 
 ```python
-Money(Decimal("10.00"))   # fine — exactly 2 decimal places for CAD
+Money(Decimal("10.00"))  # fine — exactly 2 decimal places for CAD
 Money(Decimal("10.005"))  # raises ValidationError — too much precision
 ```
 

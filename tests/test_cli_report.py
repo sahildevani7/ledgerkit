@@ -14,10 +14,15 @@ def test_trial_balance_empty_ledger(cli_db, capsys):
 def test_trial_balance_reflects_postings(cli_db, capsys):
     main(
         [
-            "--db", cli_db, "post",
-            "--debit", "1000:100.00",
-            "--credit", "3000:100.00",
-            "--entry-date", "2026-07-17",
+            "--db",
+            cli_db,
+            "post",
+            "--debit",
+            "1000:100.00",
+            "--credit",
+            "3000:100.00",
+            "--entry-date",
+            "2026-07-17",
         ]
     )
     capsys.readouterr()
@@ -29,10 +34,15 @@ def test_trial_balance_reflects_postings(cli_db, capsys):
 def test_trial_balance_as_of(cli_db, capsys):
     main(
         [
-            "--db", cli_db, "post",
-            "--debit", "1000:100.00",
-            "--credit", "3000:100.00",
-            "--entry-date", "2026-08-01",
+            "--db",
+            cli_db,
+            "post",
+            "--debit",
+            "1000:100.00",
+            "--credit",
+            "3000:100.00",
+            "--entry-date",
+            "2026-08-01",
         ]
     )
     capsys.readouterr()
@@ -59,11 +69,17 @@ def test_account_activity_empty(cli_db, capsys):
 def test_account_activity_reflects_postings(cli_db, capsys):
     main(
         [
-            "--db", cli_db, "post",
-            "--debit", "1000:75.00",
-            "--credit", "3000:75.00",
-            "--entry-date", "2026-07-17",
-            "--memo", "test entry",
+            "--db",
+            cli_db,
+            "post",
+            "--debit",
+            "1000:75.00",
+            "--credit",
+            "3000:75.00",
+            "--entry-date",
+            "2026-07-17",
+            "--memo",
+            "test entry",
         ]
     )
     capsys.readouterr()
@@ -76,18 +92,28 @@ def test_account_activity_reflects_postings(cli_db, capsys):
 def test_account_activity_date_range(cli_db, capsys):
     main(
         [
-            "--db", cli_db, "post",
-            "--debit", "1000:10.00",
-            "--credit", "3000:10.00",
-            "--entry-date", "2026-06-01",
+            "--db",
+            cli_db,
+            "post",
+            "--debit",
+            "1000:10.00",
+            "--credit",
+            "3000:10.00",
+            "--entry-date",
+            "2026-06-01",
         ]
     )
     main(
         [
-            "--db", cli_db, "post",
-            "--debit", "1000:20.00",
-            "--credit", "3000:20.00",
-            "--entry-date", "2026-07-01",
+            "--db",
+            cli_db,
+            "post",
+            "--debit",
+            "1000:20.00",
+            "--credit",
+            "3000:20.00",
+            "--entry-date",
+            "2026-07-01",
         ]
     )
     capsys.readouterr()

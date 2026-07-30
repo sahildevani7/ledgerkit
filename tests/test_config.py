@@ -90,12 +90,12 @@ def test_with_overrides_returns_new_instance():
 
 
 def test_find_config_file_in_start_directory(tmp_path: Path):
-    (tmp_path / "ledgerkit.toml").write_text("db_path = \"x.db\"\n")
+    (tmp_path / "ledgerkit.toml").write_text('db_path = "x.db"\n')
     assert find_config_file(tmp_path) == tmp_path / "ledgerkit.toml"
 
 
 def test_find_config_file_in_ancestor_directory(tmp_path: Path):
-    (tmp_path / "ledgerkit.toml").write_text("db_path = \"x.db\"\n")
+    (tmp_path / "ledgerkit.toml").write_text('db_path = "x.db"\n')
     nested = tmp_path / "a" / "b" / "c"
     nested.mkdir(parents=True)
     assert find_config_file(nested) == tmp_path / "ledgerkit.toml"
@@ -108,8 +108,8 @@ def test_find_config_file_returns_none_when_absent(tmp_path: Path):
 
 
 def test_find_config_file_prefers_closest_ancestor(tmp_path: Path):
-    (tmp_path / "ledgerkit.toml").write_text("db_path = \"outer.db\"\n")
+    (tmp_path / "ledgerkit.toml").write_text('db_path = "outer.db"\n')
     nested = tmp_path / "nested"
     nested.mkdir()
-    (nested / "ledgerkit.toml").write_text("db_path = \"inner.db\"\n")
+    (nested / "ledgerkit.toml").write_text('db_path = "inner.db"\n')
     assert find_config_file(nested) == nested / "ledgerkit.toml"

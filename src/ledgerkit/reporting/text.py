@@ -45,9 +45,7 @@ class TextRenderer:
         )
         return "\n".join(lines)
 
-    def render_account_activity(
-        self, account: Account, activity: Sequence[AccountActivity]
-    ) -> str:
+    def render_account_activity(self, account: Account, activity: Sequence[AccountActivity]) -> str:
         header = f"{account.code}  {account.name} ({account.type.value})"
         column_header = (
             "Date".ljust(_DATE_WIDTH)
