@@ -164,3 +164,20 @@ def test_show_reflects_inactive_status(fresh_db, capsys):
     main(["--db", fresh_db, "accounts", "show", "1000"])
     output = capsys.readouterr().out
     assert "inactive" in output
+
+
+def test_rename_updates_display_name(fresh_db, capsys):
+    main(["--db", fresh_db, "accounts", "create", "1000", "Old Name", "asset"])
+    capsys.readouterr()
+    exit_code = main(["--db", fresh_db, "accounts", "rename", "1000", "New Name"])
+    assert exit_code == 0
+    assert "New Name" in capsys.readouterr().out
+
+    capsys.readouterr()
+    main(["--db", fresh_db, "accounts", "show", "1000"])
+    assert "New Name" in capsys.readouterr().out
+
+
+def test_rename_missing_account_returns_exit_code_one(fresh_db):
+    exit_code = main(["--db", fresh_db, "accounts", "rename", "no-such-code", "New Name"])
+    assert exit_code == 1
