@@ -28,6 +28,12 @@ interface is secondary.
   trial balance report.
 - **SQLite storage** with a real migration runner and a unit-of-work
   transaction boundary — every multi-entry operation is atomic.
+- **Account hierarchy.** Accounts can be nested (`Groceries` >
+  `Household`, `Dining Out`), re-parented, renamed, and rolled up —
+  `balance --include-subaccounts` sums an account and everything beneath it.
+- **Flat config loading**, with a search up the directory tree for
+  `ledgerkit.toml`, environment variable overrides, and explicit
+  keyword overrides, in that order.
 
 ## Installation
 
@@ -63,6 +69,9 @@ ledgerkit --db ledger.db balance 1000
 ledgerkit --db ledger.db report trial-balance
 ```
 
+To play with a pre-populated ledger instead of typing all of the above by
+hand, run `python scripts/seed_demo_ledger.py --db demo.db`.
+
 ## Development
 
 ```bash
@@ -87,6 +96,17 @@ src/ledgerkit/
 ```
 
 Tests live under `tests/`, mirroring the package layout.
+
+## Further reading
+
+- [docs/architecture.md](docs/architecture.md) — module layout and dependency direction
+- [docs/architecture-decisions.md](docs/architecture-decisions.md) — why a few non-obvious things are built the way they are
+- [docs/money-and-currency.md](docs/money-and-currency.md) — the Money/Currency design in depth
+- [docs/csv-import-format.md](docs/csv-import-format.md) — the shipped CSV dialect
+- [docs/migrations.md](docs/migrations.md) — how the schema migration runner works
+- [docs/cli.md](docs/cli.md) — full CLI command reference
+- [docs/error-handling.md](docs/error-handling.md) — the error hierarchy and exit codes
+- [docs/testing.md](docs/testing.md) — test layout and conventions
 
 ## Design notes
 
