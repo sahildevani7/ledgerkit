@@ -50,3 +50,45 @@ def test_balance_as_of_excludes_later_entries(cli_db, capsys):
 def test_balance_missing_account_returns_exit_code_one(cli_db):
     exit_code = main(["--db", cli_db, "balance", "no-such-code"])
     assert exit_code == 1
+
+
+def test_balance_include_subaccounts_rolls_up_children(cli_db, capsys):
+    main(["--db", cli_db, "accounts", "create", "5000", "Groceries", "expense"])
+    main(
+        [
+            "--db", cli_db, "accounts", "create", "5010", "Household", "expense",
+            "--parent", "5000",
+        ]
+    )
+    main(
+        [
+            "--db", cli_db, "post",
+            "--debit", "5010:40.00",
+            "--credit", "1000:40.00",
+            "--entry-date", "2026-07-17",
+        ]
+    )
+    capsys.readouterr()
+    main(["--db", cli_db, "balance", "5000", "--include-subaccounts"])
+    assert capsys.readouterr().out.strip() == "40.00 CAD"
+
+
+def test_balance_without_include_subaccounts_excludes_children(cli_db, capsys):
+    main(["--db", cli_db, "accounts", "create", "5000", "Groceries", "expense"])
+    main(
+        [
+            "--db", cli_db, "accounts", "create", "5010", "Household", "expense",
+            "--parent", "5000",
+        ]
+    )
+    main(
+        [
+            "--db", cli_db, "post",
+            "--debit", "5010:40.00",
+            "--credit", "1000:40.00",
+            "--entry-date", "2026-07-17",
+        ]
+    )
+    capsys.readouterr()
+    main(["--db", cli_db, "balance", "5000"])
+    assert capsys.readouterr().out.strip() == "0.00 CAD"
