@@ -2,7 +2,15 @@
 
 Expected header: ``date,description,amount``. ``date`` is ISO 8601
 (``YYYY-MM-DD``); ``amount`` is a decimal string, positive for money in and
-negative for money out.
+negative for money out. See :doc:`/csv-import-format` for the full format
+description with examples.
+
+Every row is validated before any transaction is returned — a malformed
+row anywhere in the file fails the whole parse, rather than returning a
+partial list with the bad row silently skipped. That's deliberate: a
+statement import is usually unattended, and a silently dropped
+transaction is far worse than a loud failure the caller has to notice and
+fix.
 """
 
 from __future__ import annotations
