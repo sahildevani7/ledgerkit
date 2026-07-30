@@ -49,3 +49,25 @@ A few places are one-implementation-deep by design, not by oversight:
 Each is a real `Protocol` with a real implementation behind it, wired
 through a small registry or direct construction. Adding a second
 implementation means registering it, not restructuring anything.
+
+## Where read and write paths diverge
+
+Writes go through repositories (`AccountRepository`, `JournalRepository`)
+and, for anything multi-row, `UnitOfWork`. Reads mostly bypass the
+repositories and query the tables directly —
+`ledger.queries.account_balance` and `all_account_balances` issue their
+own SQL rather than reconstructing full `JournalEntry` objects for every
+line just to sum them. This is a deliberate asymmetry: a repository's job
+is to turn rows into domain objects faithfully, which is the right cost
+to pay when something is being modified, but wasted work for an
+aggregate that never needs the intermediate objects at all.
+
+## What a new query function looks like
+
+Every function in `ledger.queries` follows the same shape: validate the
+account exists (via `AccountRepository.get`, which raises `NotFoundError`
+on its own), build a parameterized SQL query with optional date bounds,
+and map rows back into `Money` through `get_currency` rather than
+assuming CAD. A new aggregate — `subtree_balance` is the most recent
+example — follows that shape rather than introducing a different query
+style.
