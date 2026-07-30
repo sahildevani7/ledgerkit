@@ -16,6 +16,7 @@ from ledgerkit.ledger.queries import (
     account_balance,
     accounts_with_activity,
     all_account_balances,
+    subtree_balance,
 )
 from ledgerkit.money import Money
 
@@ -189,3 +190,51 @@ def test_accounts_with_activity_lists_touched_accounts(migrated_conn, accounts, 
     _post(migrated_conn, clock, checking.id, opening.id, "10.00", date(2026, 6, 1))
     touched = accounts_with_activity(migrated_conn)
     assert set(touched) == {checking.id, opening.id}
+
+
+@pytest.fixture
+def grocery_tree(migrated_conn):
+    repo = AccountRepository(migrated_conn)
+    groceries = repo.create(Account(code="5000", name="Groceries", type=AccountType.EXPENSE))
+    household = repo.create(
+        Account(code="5010", name="Household", type=AccountType.EXPENSE, parent_id=groceries.id)
+    )
+    dining = repo.create(
+        Account(code="5020", name="Dining Out", type=AccountType.EXPENSE, parent_id=groceries.id)
+    )
+    checking = repo.create(Account(code="1000", name="Checking", type=AccountType.ASSET))
+    return groceries, household, dining, checking
+
+
+def test_subtree_balance_sums_self_and_descendants(migrated_conn, grocery_tree, clock):
+    groceries, household, dining, checking = grocery_tree
+    repo = AccountRepository(migrated_conn)
+    chart = repo.chart()
+    for account_id, amount in ((household.id, "40.00"), (dining.id, "25.00")):
+        _post(migrated_conn, clock, checking.id, account_id, "-" + amount, date(2026, 6, 1))
+    total = subtree_balance(migrated_conn, groceries.id, chart)
+    assert total == Money(Decimal("65.00"))
+
+
+def test_subtree_balance_leaf_account_is_just_its_own_balance(migrated_conn, grocery_tree, clock):
+    groceries, household, dining, checking = grocery_tree
+    repo = AccountRepository(migrated_conn)
+    chart = repo.chart()
+    _post(migrated_conn, clock, checking.id, household.id, "-40.00", date(2026, 6, 1))
+    assert subtree_balance(migrated_conn, household.id, chart) == Money(Decimal("40.00"))
+
+
+def test_subtree_balance_zero_when_no_activity(migrated_conn, grocery_tree):
+    groceries, _, _, _ = grocery_tree
+    chart = AccountRepository(migrated_conn).chart()
+    assert subtree_balance(migrated_conn, groceries.id, chart).is_zero()
+
+
+def test_subtree_balance_as_of_date(migrated_conn, grocery_tree, clock):
+    groceries, household, dining, checking = grocery_tree
+    repo = AccountRepository(migrated_conn)
+    chart = repo.chart()
+    _post(migrated_conn, clock, checking.id, household.id, "-10.00", date(2026, 6, 1))
+    _post(migrated_conn, clock, checking.id, dining.id, "-20.00", date(2026, 7, 1))
+    total = subtree_balance(migrated_conn, groceries.id, chart, as_of=date(2026, 6, 15))
+    assert total == Money(Decimal("10.00"))
