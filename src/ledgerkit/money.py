@@ -271,3 +271,16 @@ class Money:
     def format(self) -> str:
         """Render with a fixed number of decimal places and a currency suffix."""
         return f"{self._amount:.{self._currency.exponent}f} {self._currency.code}"
+
+    def __format__(self, format_spec: str) -> str:
+        """Support f-string formatting: ``f"{money}"`` and ``f"{money:.2f}"``.
+
+        An empty format spec renders the same as :meth:`format`. A
+        non-empty spec is applied to the underlying amount only — the
+        currency code is never included when a caller asks for a specific
+        numeric format, since at that point they're formatting a number,
+        not a piece of money.
+        """
+        if not format_spec:
+            return self.format()
+        return format(self._amount, format_spec)
