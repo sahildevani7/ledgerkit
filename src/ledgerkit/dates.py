@@ -89,6 +89,10 @@ class Period:
     def contains(self, d: date) -> bool:
         return self.start <= d <= self.end
 
+    def __contains__(self, d: date) -> bool:
+        """Support ``d in period``, equivalent to :meth:`contains`."""
+        return self.contains(d)
+
     def overlaps(self, other: Period) -> bool:
         """Whether this period shares at least one day with ``other``.
 

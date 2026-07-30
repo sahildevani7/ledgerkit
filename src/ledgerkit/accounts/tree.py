@@ -99,3 +99,9 @@ class ChartOfAccounts:
 
     def is_root(self, account_id: AccountId) -> bool:
         return self.get(account_id).parent_id is None
+
+    def __len__(self) -> int:
+        return len(self._by_id)
+
+    def __contains__(self, account_id: AccountId) -> bool:
+        return account_id in self._by_id
