@@ -93,3 +93,7 @@ class JournalEntry:
         categories that happen to share an account, for instance).
         """
         return tuple(line for line in self.lines if line.account_id == account_id)
+
+    def __len__(self) -> int:
+        """The number of lines in this entry — always at least 2."""
+        return len(self.lines)
