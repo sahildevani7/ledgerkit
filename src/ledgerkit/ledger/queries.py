@@ -81,3 +81,50 @@ def account_activity(
         )
         for row in rows
     ]
+
+
+def all_account_balances(
+    connection: sqlite3.Connection, *, as_of: date | None = None
+) -> dict[AccountId, Money]:
+    """Every account's balance in a single query, keyed by account id.
+
+    This is what :func:`~ledgerkit.ledger.trial_balance.build_trial_balance`
+    uses internally — computing every account's balance with one grouped
+    query is far cheaper than calling :func:`account_balance` once per
+    account, and existing accounts with zero activity still appear in the
+    result with a zero balance.
+    """
+    accounts = AccountRepository(connection).list_all()
+    balances: dict[AccountId, Money] = {}
+    for account in accounts:
+        assert account.id is not None
+        balances[account.id] = Money.zero()
+
+    query = (
+        "SELECT jl.account_id, jl.amount, jl.currency_code FROM journal_lines jl "
+        "JOIN journal_entries je ON je.id = jl.entry_id"
+    )
+    params: list[object] = []
+    if as_of is not None:
+        query += " WHERE je.entry_date <= ?"
+        params.append(as_of.isoformat())
+    rows = connection.execute(query, params).fetchall()
+
+    for row in rows:
+        account_id = AccountId(row["account_id"])
+        amount = Money(row["amount"], get_currency(row["currency_code"]))
+        balances[account_id] = balances.get(account_id, Money.zero()) + amount
+
+    return balances
+
+
+def accounts_with_activity(connection: sqlite3.Connection) -> list[AccountId]:
+    """Every account id that has at least one posted line, sorted by id.
+
+    Useful for distinguishing accounts that have actually been used from
+    ones that exist in the chart but have never been posted to.
+    """
+    rows = connection.execute(
+        "SELECT DISTINCT account_id FROM journal_lines ORDER BY account_id"
+    ).fetchall()
+    return [AccountId(row["account_id"]) for row in rows]
