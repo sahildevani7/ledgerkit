@@ -15,6 +15,7 @@ import sqlite3
 from pathlib import Path
 from types import TracebackType
 
+from ledgerkit.storage.pragmas import apply_pragmas
 from ledgerkit.storage.unit_of_work import UnitOfWork
 
 
@@ -51,7 +52,7 @@ class Engine:
         """
         if self._connection is None:
             conn = sqlite3.connect(self._db_path, isolation_level=None)
-            conn.execute("PRAGMA foreign_keys = ON")
+            apply_pragmas(conn)
             conn.row_factory = sqlite3.Row
             self._connection = conn
         return self._connection
