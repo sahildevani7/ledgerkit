@@ -8,12 +8,13 @@ from datetime import date
 
 from ledgerkit.accounts.repository import AccountRepository
 from ledgerkit.clock import Clock
-from ledgerkit.ledger.queries import account_balance
+from ledgerkit.ledger.queries import account_balance, subtree_balance
 
 _EPILOG = """\
 examples:
   ledgerkit --db ledger.db balance 1000
   ledgerkit --db ledger.db balance 1000 --as-of 2026-06-30
+  ledgerkit --db ledger.db balance 5000 --include-subaccounts
 """
 
 
@@ -29,6 +30,11 @@ def add_arguments(
     )
     parser.add_argument("account_code", help="the account's code, not its numeric id")
     parser.add_argument("--as-of", default=None, help="ISO date; defaults to all activity")
+    parser.add_argument(
+        "--include-subaccounts",
+        action="store_true",
+        help="roll up every descendant account's balance into the total",
+    )
     parser.set_defaults(handler=run)
     return parser
 
@@ -41,9 +47,16 @@ def run(args: argparse.Namespace, connection: sqlite3.Connection, clock: Clock) 
             — caught by :func:`ledgerkit.cli.main.main`, which turns it
             into exit code 1.
     """
-    account = AccountRepository(connection).get_by_code(args.account_code)
+    account_repo = AccountRepository(connection)
+    account = account_repo.get_by_code(args.account_code)
     assert account.id is not None
     as_of = date.fromisoformat(args.as_of) if args.as_of else None
-    balance = account_balance(connection, account.id, as_of=as_of)
+
+    if args.include_subaccounts:
+        chart = account_repo.chart()
+        balance = subtree_balance(connection, account.id, chart, as_of=as_of)
+    else:
+        balance = account_balance(connection, account.id, as_of=as_of)
+
     print(balance.format())
     return 0
