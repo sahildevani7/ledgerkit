@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from datetime import date
 
 from ledgerkit.accounts.repository import AccountRepository
+from ledgerkit.accounts.tree import ChartOfAccounts
 from ledgerkit.currency import get_currency
 from ledgerkit.ids import AccountId, EntryId
 from ledgerkit.money import Money
@@ -128,3 +129,33 @@ def accounts_with_activity(connection: sqlite3.Connection) -> list[AccountId]:
         "SELECT DISTINCT account_id FROM journal_lines ORDER BY account_id"
     ).fetchall()
     return [AccountId(row["account_id"]) for row in rows]
+
+
+def subtree_balance(
+    connection: sqlite3.Connection,
+    account_id: AccountId,
+    chart: ChartOfAccounts,
+    *,
+    as_of: date | None = None,
+) -> Money:
+    """The combined balance of an account and every account beneath it.
+
+    Useful for a parent account that's purely organizational — "Groceries"
+    might have "Groceries: Household" and "Groceries: Dining Out" beneath
+    it, and this answers "how much, in total, across the whole category"
+    without the caller needing to walk the hierarchy itself.
+
+    Args:
+        connection: An already-migrated connection.
+        account_id: The account to start from; included in the total.
+        chart: A :class:`~ledgerkit.accounts.tree.ChartOfAccounts` built
+            from the same database — passed in rather than rebuilt here,
+            since a caller summing several subtrees would otherwise pay
+            for reloading the whole chart of accounts each time.
+        as_of: Restrict the balance to activity on or before this date.
+    """
+    total = account_balance(connection, account_id, as_of=as_of)
+    for descendant in chart.descendants_of(account_id):
+        assert descendant.id is not None
+        total = total + account_balance(connection, descendant.id, as_of=as_of)
+    return total
