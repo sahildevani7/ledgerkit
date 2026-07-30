@@ -58,3 +58,12 @@ calls: commit on success, roll back on any exception. See
 **Migration** — A single, numbered, one-time schema change. Migrations
 are never edited after they ship; a later change to the same table is a
 new migration.
+
+**Clock** — The single injected source of "now" throughout the library.
+`SystemClock` reads the real system time; `FixedClock` pins it to a fixed
+instant for deterministic tests. Nothing outside `SystemClock` itself
+calls `datetime.now()` directly.
+
+**Seam** — An extension point with exactly one real implementation today
+— the importer registry, the renderer protocol, the currency registry.
+Proves the pattern works without speculative, unused abstraction.
