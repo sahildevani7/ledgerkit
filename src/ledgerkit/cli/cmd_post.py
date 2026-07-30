@@ -1,4 +1,12 @@
-"""``ledgerkit post``: post a manual journal entry from the command line."""
+"""``ledgerkit post``: post a manual journal entry from the command line.
+
+``--debit`` and ``--credit`` each take one ``CODE:AMOUNT`` pair and can be
+repeated to build a multi-line entry — the CLI equivalent of constructing
+several :class:`~ledgerkit.journal.entry.Line` objects by hand. The lines
+still have to balance; that's enforced by
+:class:`~ledgerkit.journal.entry.JournalEntry` itself; this module doesn't
+duplicate the check.
+"""
 
 from __future__ import annotations
 
@@ -18,20 +26,37 @@ from ledgerkit.money import Money
 def add_arguments(
     subparsers: argparse._SubParsersAction[argparse.ArgumentParser],
 ) -> argparse.ArgumentParser:
+    """Register the ``post`` subcommand and its arguments."""
     parser = subparsers.add_parser("post", help="post a manual journal entry")
     parser.add_argument(
-        "--debit", action="append", default=[], metavar="CODE:AMOUNT", required=True
+        "--debit",
+        action="append",
+        default=[],
+        metavar="CODE:AMOUNT",
+        required=True,
+        help="a debit line; repeat for more than one",
     )
     parser.add_argument(
-        "--credit", action="append", default=[], metavar="CODE:AMOUNT", required=True
+        "--credit",
+        action="append",
+        default=[],
+        metavar="CODE:AMOUNT",
+        required=True,
+        help="a credit line; repeat for more than one",
     )
     parser.add_argument("--entry-date", default=None, help="ISO date; defaults to today")
-    parser.add_argument("--memo", default=None)
+    parser.add_argument("--memo", default=None, help="a free-text note for the entry")
     parser.set_defaults(handler=run)
     return parser
 
 
 def _parse_spec(spec: str) -> tuple[str, Decimal]:
+    """Split a ``CODE:AMOUNT`` argument into its account code and amount.
+
+    Raises:
+        ValidationError: If ``spec`` has no ``:`` separator, or the part
+            after it isn't a valid decimal.
+    """
     code, sep, amount_str = spec.partition(":")
     if not sep:
         raise ValidationError(f"expected CODE:AMOUNT, got {spec!r}")
@@ -43,6 +68,14 @@ def _parse_spec(spec: str) -> tuple[str, Decimal]:
 
 
 def run(args: argparse.Namespace, connection: sqlite3.Connection, clock: Clock) -> int:
+    """Build a journal entry from ``--debit``/``--credit`` arguments and post it.
+
+    Raises:
+        ValidationError: If a ``CODE:AMOUNT`` argument is malformed, or if
+            the resulting entry doesn't balance
+            (:class:`~ledgerkit.errors.UnbalancedEntryError`, a subclass).
+        NotFoundError: If a referenced account code doesn't exist.
+    """
     account_repo = AccountRepository(connection)
     lines: list[Line] = []
     for spec in args.debit:

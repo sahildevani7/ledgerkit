@@ -1,4 +1,11 @@
-"""``ledgerkit report``: render a report."""
+"""``ledgerkit report``: render a report.
+
+Two report types are registered as sub-subcommands under ``report``:
+``trial-balance`` and ``account-activity``. Both go through
+:class:`~ledgerkit.reporting.text.TextRenderer` — the CLI is the one place
+that constructs a concrete renderer; everything below it takes the
+:class:`~ledgerkit.reporting.renderer.Renderer` protocol instead.
+"""
 
 from __future__ import annotations
 
@@ -38,6 +45,7 @@ def add_arguments(
 def run_trial_balance(
     args: argparse.Namespace, connection: sqlite3.Connection, clock: Clock
 ) -> int:
+    """Render every account's balance, split into debit and credit columns."""
     as_of = date.fromisoformat(args.as_of) if args.as_of else None
     print(render_trial_balance_report(connection, TextRenderer(), as_of=as_of))
     return 0
@@ -46,6 +54,11 @@ def run_trial_balance(
 def run_account_activity(
     args: argparse.Namespace, connection: sqlite3.Connection, clock: Clock
 ) -> int:
+    """Render one account's transaction history with a running balance.
+
+    Raises:
+        NotFoundError: If ``args.account_code`` doesn't match any account.
+    """
     start = date.fromisoformat(args.start) if args.start else None
     end = date.fromisoformat(args.end) if args.end else None
     report = render_account_activity_report(
