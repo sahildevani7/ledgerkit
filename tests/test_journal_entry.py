@@ -139,3 +139,19 @@ def test_lines_for_account_no_match_returns_empty_tuple():
         lines=(_line(1, "10.00"), _line(2, "-10.00")),
     )
     assert entry.lines_for_account(AccountId(99)) == ()
+
+
+def test_len_returns_line_count():
+    entry = JournalEntry(
+        entry_date=date(2026, 6, 20),
+        lines=(_line(1, "10.00"), _line(2, "-10.00")),
+    )
+    assert len(entry) == 2
+
+
+def test_len_for_multi_line_entry():
+    entry = JournalEntry(
+        entry_date=date(2026, 6, 20),
+        lines=(_line(1, "10.00"), _line(2, "-6.00"), _line(3, "-4.00")),
+    )
+    assert len(entry) == 3
