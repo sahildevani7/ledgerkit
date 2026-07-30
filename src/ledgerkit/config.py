@@ -124,3 +124,24 @@ def find_config_file(start: Path) -> Path | None:
         if current.parent == current:
             return None
         current = current.parent
+
+
+def _toml_value(value: object) -> str:
+    if isinstance(value, str):
+        escaped = value.replace("\\", "\\\\").replace('"', '\\"')
+        return f'"{escaped}"'
+    if isinstance(value, bool):
+        return "true" if value else "false"
+    return str(value)
+
+
+def write_config(path: Path, config: LedgerConfig) -> None:
+    """Write ``config`` to ``path`` as TOML, one ``key = value`` line per field.
+
+    The inverse of :func:`load_config` reading a file: a config loaded,
+    modified with :meth:`LedgerConfig.with_overrides`, and written back
+    round-trips exactly, since only the same flat set of scalar fields is
+    ever involved.
+    """
+    lines = [f"{field} = {_toml_value(getattr(config, field))}" for field in _FIELD_TYPES]
+    path.write_text("\n".join(lines) + "\n")
