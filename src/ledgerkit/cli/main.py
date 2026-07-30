@@ -32,14 +32,27 @@ def _package_version() -> str:
         return "unknown"
 
 
+_EPILOG = """\
+commands:
+  accounts   manage the chart of accounts
+  import     import a bank statement and post it
+  post       post a manual journal entry
+  balance    show an account's balance
+  report     render a trial balance or an account's activity
+
+run `ledgerkit <command> --help` for a command's own options and examples.
+"""
+
+
 def build_parser() -> argparse.ArgumentParser:
     """Build the top-level argument parser with every subcommand registered."""
     parser = argparse.ArgumentParser(
-        prog="ledgerkit", description="A double-entry accounting engine"
+        prog="ledgerkit",
+        description="A double-entry accounting engine",
+        epilog=_EPILOG,
+        formatter_class=argparse.RawDescriptionHelpFormatter,
     )
-    parser.add_argument(
-        "--version", action="version", version=f"ledgerkit {_package_version()}"
-    )
+    parser.add_argument("--version", action="version", version=f"ledgerkit {_package_version()}")
     parser.add_argument("--db", default="ledger.db", help="path to the SQLite database")
     subparsers = parser.add_subparsers(dest="command", required=True)
     cmd_accounts.add_arguments(subparsers)

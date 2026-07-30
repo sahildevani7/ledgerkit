@@ -17,11 +17,25 @@ from ledgerkit.clock import Clock
 
 _TYPE_CHOICES = tuple(t.value for t in AccountType)
 
+_EPILOG = """\
+examples:
+  ledgerkit --db ledger.db accounts create 1000 Checking asset
+  ledgerkit --db ledger.db accounts create 1100 Cash asset --parent 1000
+  ledgerkit --db ledger.db accounts list --include-inactive
+  ledgerkit --db ledger.db accounts reparent 1100 --parent 2000
+  ledgerkit --db ledger.db accounts show 1000
+"""
+
 
 def add_arguments(
     subparsers: argparse._SubParsersAction[argparse.ArgumentParser],
 ) -> argparse.ArgumentParser:
-    parser = subparsers.add_parser("accounts", help="manage the chart of accounts")
+    parser = subparsers.add_parser(
+        "accounts",
+        help="manage the chart of accounts",
+        epilog=_EPILOG,
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
     account_subparsers = parser.add_subparsers(dest="accounts_command", required=True)
 
     list_parser = account_subparsers.add_parser("list", help="list accounts")
@@ -46,9 +60,7 @@ def add_arguments(
     )
     reparent_parser.set_defaults(handler=run_reparent)
 
-    deactivate_parser = account_subparsers.add_parser(
-        "deactivate", help="mark an account inactive"
-    )
+    deactivate_parser = account_subparsers.add_parser("deactivate", help="mark an account inactive")
     deactivate_parser.add_argument("code")
     deactivate_parser.set_defaults(handler=run_deactivate)
 

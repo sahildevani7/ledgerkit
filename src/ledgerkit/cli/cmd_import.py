@@ -22,12 +22,25 @@ from ledgerkit.journal.entry import JournalEntry, Line
 from ledgerkit.journal.repository import JournalRepository
 from ledgerkit.storage.unit_of_work import UnitOfWork
 
+_EPILOG = """\
+examples:
+  ledgerkit --db ledger.db import statement.csv \\
+      --account 1000 --contra-account 3000
+  ledgerkit --db ledger.db import statement.csv \\
+      --account 1000 --contra-account 9999 --dialect generic_csv
+"""
+
 
 def add_arguments(
     subparsers: argparse._SubParsersAction[argparse.ArgumentParser],
 ) -> argparse.ArgumentParser:
     """Register the ``import`` subcommand and its arguments."""
-    parser = subparsers.add_parser("import", help="import a bank statement")
+    parser = subparsers.add_parser(
+        "import",
+        help="import a bank statement",
+        epilog=_EPILOG,
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
     parser.add_argument("file", help="path to the statement file")
     parser.add_argument("--account", required=True, help="account code the statement belongs to")
     parser.add_argument(

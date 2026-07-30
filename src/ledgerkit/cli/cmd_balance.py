@@ -10,12 +10,23 @@ from ledgerkit.accounts.repository import AccountRepository
 from ledgerkit.clock import Clock
 from ledgerkit.ledger.queries import account_balance
 
+_EPILOG = """\
+examples:
+  ledgerkit --db ledger.db balance 1000
+  ledgerkit --db ledger.db balance 1000 --as-of 2026-06-30
+"""
+
 
 def add_arguments(
     subparsers: argparse._SubParsersAction[argparse.ArgumentParser],
 ) -> argparse.ArgumentParser:
     """Register the ``balance`` subcommand and its arguments."""
-    parser = subparsers.add_parser("balance", help="show an account's balance")
+    parser = subparsers.add_parser(
+        "balance",
+        help="show an account's balance",
+        epilog=_EPILOG,
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
     parser.add_argument("account_code", help="the account's code, not its numeric id")
     parser.add_argument("--as-of", default=None, help="ISO date; defaults to all activity")
     parser.set_defaults(handler=run)

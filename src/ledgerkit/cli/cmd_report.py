@@ -18,11 +18,23 @@ from ledgerkit.reporting.account_activity_report import render_account_activity_
 from ledgerkit.reporting.text import TextRenderer
 from ledgerkit.reporting.trial_balance_report import render_trial_balance_report
 
+_EPILOG = """\
+examples:
+  ledgerkit --db ledger.db report trial-balance
+  ledgerkit --db ledger.db report trial-balance --as-of 2026-06-30
+  ledgerkit --db ledger.db report account-activity 1000 --start 2026-01-01
+"""
+
 
 def add_arguments(
     subparsers: argparse._SubParsersAction[argparse.ArgumentParser],
 ) -> argparse.ArgumentParser:
-    parser = subparsers.add_parser("report", help="render a report")
+    parser = subparsers.add_parser(
+        "report",
+        help="render a report",
+        epilog=_EPILOG,
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
     report_subparsers = parser.add_subparsers(dest="report_type", required=True)
 
     trial_balance_parser = report_subparsers.add_parser(

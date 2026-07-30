@@ -22,12 +22,25 @@ from ledgerkit.journal.entry import JournalEntry, Line
 from ledgerkit.journal.posting import post as post_entry
 from ledgerkit.money import Money
 
+_EPILOG = """\
+examples:
+  ledgerkit --db ledger.db post --debit 1000:100.00 --credit 3000:100.00
+  ledgerkit --db ledger.db post \\
+      --debit 5000:60.00 --debit 5000:40.00 --credit 1000:100.00 \\
+      --entry-date 2026-07-01 --memo "groceries, split receipt"
+"""
+
 
 def add_arguments(
     subparsers: argparse._SubParsersAction[argparse.ArgumentParser],
 ) -> argparse.ArgumentParser:
     """Register the ``post`` subcommand and its arguments."""
-    parser = subparsers.add_parser("post", help="post a manual journal entry")
+    parser = subparsers.add_parser(
+        "post",
+        help="post a manual journal entry",
+        epilog=_EPILOG,
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
     parser.add_argument(
         "--debit",
         action="append",
