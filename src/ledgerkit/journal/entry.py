@@ -12,8 +12,9 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import date, datetime
 
-from ledgerkit.errors import UnbalancedEntryError, ValidationError
+from ledgerkit.errors import ValidationError
 from ledgerkit.ids import AccountId, EntryId, ImportBatchId, LineId
+from ledgerkit.journal.validation import validate_balanced, validate_line_count
 from ledgerkit.money import Money
 
 
@@ -50,13 +51,8 @@ class JournalEntry:
     id: EntryId | None = None
 
     def __post_init__(self) -> None:
-        if len(self.lines) < 2:
-            raise ValidationError("a journal entry needs at least two lines")
-        total = self.total()
-        if not total.is_zero():
-            raise UnbalancedEntryError(
-                f"entry does not balance: lines sum to {total}, expected zero"
-            )
+        validate_line_count(len(self.lines))
+        validate_balanced(self.total())
 
     def total(self) -> Money:
         currency = self.lines[0].amount.currency
