@@ -18,7 +18,7 @@ import sys
 from collections.abc import Sequence
 from importlib.metadata import PackageNotFoundError, version
 
-from ledgerkit.cli import cmd_accounts, cmd_balance, cmd_import, cmd_post, cmd_report
+from ledgerkit.cli import cmd_accounts, cmd_balance, cmd_import, cmd_post, cmd_report, cmd_summary
 from ledgerkit.clock import SystemClock
 from ledgerkit.errors import LedgerError
 from ledgerkit.storage.engine import Engine
@@ -39,6 +39,7 @@ commands:
   post       post a manual journal entry
   balance    show an account's balance
   report     render a trial balance or an account's activity
+  summary    show account and entry counts at a glance
 
 run `ledgerkit <command> --help` for a command's own options and examples.
 """
@@ -60,6 +61,7 @@ def build_parser() -> argparse.ArgumentParser:
     cmd_post.add_arguments(subparsers)
     cmd_balance.add_arguments(subparsers)
     cmd_report.add_arguments(subparsers)
+    cmd_summary.add_arguments(subparsers)
     return parser
 
 
