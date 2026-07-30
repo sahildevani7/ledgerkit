@@ -86,6 +86,26 @@ class AccountRepository:
         )
         return self.get(account_id)
 
+    def rename(self, account_id: AccountId, new_name: str) -> Account:
+        """Rename an account, leaving its code and hierarchy untouched.
+
+        A name is display metadata, not an identifier — nothing else in
+        ledgerkit references an account by name, so renaming one has no
+        effect on any journal entry or query result beyond this account's
+        own ``name`` field.
+
+        Raises:
+            NotFoundError: If ``account_id`` doesn't exist.
+            ValidationError: If ``new_name`` is blank.
+        """
+        self.get(account_id)
+        if not new_name.strip():
+            raise ValidationError("account name must not be empty")
+        self._conn.execute(
+            "UPDATE accounts SET name = ? WHERE id = ?", (new_name, account_id)
+        )
+        return self.get(account_id)
+
     def exists(self, code: str) -> bool:
         """Whether an account with ``code`` has been created."""
         row = self._conn.execute("SELECT 1 FROM accounts WHERE code = ?", (code,)).fetchone()
