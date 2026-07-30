@@ -65,3 +65,37 @@ def test_file_backed_db_path(tmp_path: Path):
 def test_db_path_property():
     engine = Engine("some.db")
     assert engine.db_path == "some.db"
+
+
+def test_is_connected_false_before_connect():
+    engine = Engine(":memory:")
+    assert not engine.is_connected
+
+
+def test_is_connected_true_after_connect():
+    engine = Engine(":memory:")
+    engine.connect()
+    assert engine.is_connected
+
+
+def test_is_connected_false_after_close():
+    engine = Engine(":memory:")
+    engine.connect()
+    engine.close()
+    assert not engine.is_connected
+
+
+def test_unit_of_work_commits_on_clean_exit():
+    engine = Engine(":memory:")
+    conn = engine.connect()
+    conn.execute("CREATE TABLE t (id INTEGER)")
+    with engine.unit_of_work():
+        conn.execute("INSERT INTO t (id) VALUES (1)")
+    rows = conn.execute("SELECT id FROM t").fetchall()
+    assert [r["id"] for r in rows] == [1]
+
+
+def test_unit_of_work_uses_same_connection():
+    engine = Engine(":memory:")
+    uow = engine.unit_of_work()
+    assert uow.connection is engine.connect()
