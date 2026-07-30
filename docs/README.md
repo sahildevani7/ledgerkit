@@ -18,6 +18,8 @@
   values, and CLI exit codes
 - [testing.md](testing.md) — test layout, shared fixtures, and
   determinism conventions
+- [security.md](security.md) — no network access, what's stored where,
+  how input is validated
 - [glossary.md](glossary.md) — domain terms as this codebase uses them
 - [faq.md](faq.md) — answers to questions that come up repeatedly
 
