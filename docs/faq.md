@@ -1,14 +1,13 @@
 # FAQ
 
-## Why CAD only? When is multi-currency coming?
+## Why CAD only?
 
 `Currency` and `Money` are both currency-aware already — every `Money`
 carries a `Currency`, and combining two different currencies raises
-`ValidationError` rather than silently doing the wrong thing. What's
-missing is a second registered currency, exchange rates, and
-revaluation, which is a meaningfully different problem (what rate applies
-on what date, how rounding residue from a conversion gets absorbed) and
-isn't solved by this codebase yet.
+`ValidationError` rather than silently doing the wrong thing. Only CAD is
+registered, via `ledgerkit.currency.get_currency` — see
+[money-and-currency.md](money-and-currency.md) for how that registry
+works.
 
 ## Why doesn't the CLI have an `init` command?
 
@@ -21,10 +20,8 @@ run first.
 ## Can I delete a posted journal entry?
 
 Not through anything ledgerkit ships. `JournalRepository` has no
-`delete`, and there's no CLI command for it. Accounting systems generally
-don't delete posted entries — mistakes get corrected with an offsetting
-entry, preserving the record of what actually happened — and that's the
-direction this library is headed, not a delete button.
+`delete` method, and there's no CLI command for it — posting is the only
+write path into the journal tables.
 
 ## Why is `Money` immutable?
 

@@ -2,10 +2,9 @@
 
 Everything here is pure date arithmetic: no clock reads, no I/O. Callers get
 the current date from an injected :class:`~ledgerkit.clock.Clock` and pass it
-in explicitly. Nothing in this module reasons about recurring schedules or
-open-ended rules — it only ever computes the boundaries of a single,
+in explicitly. Every function here computes the boundaries of a single,
 already-known period (a month, a quarter, a fiscal year, an arbitrary
-range).
+range) — none of it depends on any other date beyond the one passed in.
 """
 
 from __future__ import annotations
