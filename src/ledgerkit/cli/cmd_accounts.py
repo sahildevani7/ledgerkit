@@ -56,6 +56,12 @@ def add_arguments(
     activate_parser.add_argument("code")
     activate_parser.set_defaults(handler=run_activate)
 
+    show_parser = account_subparsers.add_parser(
+        "show", help="show one account's details, path, and children"
+    )
+    show_parser.add_argument("code")
+    show_parser.set_defaults(handler=run_show)
+
     return parser
 
 
@@ -108,4 +114,25 @@ def run_activate(args: argparse.Namespace, connection: sqlite3.Connection, clock
     assert account.id is not None
     repo.set_active(account.id, True)
     print(f"activated {account.code}")
+    return 0
+
+
+def run_show(args: argparse.Namespace, connection: sqlite3.Connection, clock: Clock) -> int:
+    repo = AccountRepository(connection)
+    account = repo.get_by_code(args.code)
+    assert account.id is not None
+    chart = repo.chart()
+
+    path = " > ".join(a.name for a in chart.path_to(account.id))
+    children = chart.children_of(account.id)
+    status = "active" if account.is_active else "inactive"
+
+    print(f"{account.display_label} ({account.type.value}, {status})")
+    print(f"path: {path}")
+    if children:
+        print("children:")
+        for child in children:
+            print(f"  {child.display_label}")
+    else:
+        print("children: none")
     return 0
