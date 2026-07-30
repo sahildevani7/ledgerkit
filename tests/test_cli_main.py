@@ -39,3 +39,10 @@ def test_ledger_error_returns_exit_code_one(tmp_path: Path, capsys):
     assert exit_code == 1
     captured = capsys.readouterr()
     assert "error:" in captured.err
+
+
+def test_version_flag_exits_zero_and_prints_version(capsys):
+    with pytest.raises(SystemExit) as exc_info:
+        main(["--version"])
+    assert exc_info.value.code == 0
+    assert "ledgerkit" in capsys.readouterr().out
