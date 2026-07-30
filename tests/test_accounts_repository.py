@@ -209,3 +209,31 @@ def test_search_exact_code_prefix_only(repo):
     repo.create(Account(code="1000-A", name="Sub", type=AccountType.ASSET))
     codes = [a.code for a in repo.search("1000")]
     assert codes == ["1000", "1000-A"]
+
+
+def test_rename_updates_name(repo):
+    a = repo.create(Account(code="1000", name="Old Name", type=AccountType.ASSET))
+    renamed = repo.rename(a.id, "New Name")
+    assert renamed.name == "New Name"
+    assert repo.get(a.id).name == "New Name"
+
+
+def test_rename_leaves_code_and_parent_untouched(repo):
+    parent = repo.create(Account(code="1000", name="Parent", type=AccountType.ASSET))
+    child = repo.create(
+        Account(code="1100", name="Old", type=AccountType.ASSET, parent_id=parent.id)
+    )
+    renamed = repo.rename(child.id, "New")
+    assert renamed.code == "1100"
+    assert renamed.parent_id == parent.id
+
+
+def test_rename_rejects_blank_name(repo):
+    a = repo.create(Account(code="1000", name="A", type=AccountType.ASSET))
+    with pytest.raises(ValidationError):
+        repo.rename(a.id, "   ")
+
+
+def test_rename_missing_account_raises(repo):
+    with pytest.raises(NotFoundError):
+        repo.rename(999, "New")  # type: ignore[arg-type]
