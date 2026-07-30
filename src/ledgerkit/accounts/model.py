@@ -11,7 +11,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from enum import Enum
 
-from ledgerkit.errors import ValidationError
+from ledgerkit.accounts.validation import validate_code, validate_name
 from ledgerkit.ids import AccountId
 
 
@@ -60,10 +60,8 @@ class Account:
     id: AccountId | None = None
 
     def __post_init__(self) -> None:
-        if not self.code.strip():
-            raise ValidationError("account code must not be empty")
-        if not self.name.strip():
-            raise ValidationError("account name must not be empty")
+        validate_code(self.code)
+        validate_name(self.name)
 
     @property
     def display_label(self) -> str:
