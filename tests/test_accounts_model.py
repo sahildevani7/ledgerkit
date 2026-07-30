@@ -45,3 +45,8 @@ def test_account_is_frozen():
 
 def test_account_default_is_active_true():
     assert Account(code="1000", name="Cash", type=AccountType.ASSET).is_active
+
+
+def test_display_label():
+    account = Account(code="1000", name="Cash", type=AccountType.ASSET)
+    assert account.display_label == "1000 Cash"

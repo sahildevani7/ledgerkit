@@ -16,11 +16,20 @@ from ledgerkit.ids import AccountId
 
 
 class NormalBalance(Enum):
+    """Which side of the ledger an increase to an account posts to."""
+
     DEBIT = "debit"
     CREDIT = "credit"
 
 
 class AccountType(Enum):
+    """The five account categories the accounting equation is built from.
+
+    Assets = Liabilities + Equity, and Income/Expense feed into Equity
+    through retained earnings. Every account belongs to exactly one of
+    these; there's no sixth category and no per-account override.
+    """
+
     ASSET = "asset"
     LIABILITY = "liability"
     EQUITY = "equity"
@@ -29,6 +38,7 @@ class AccountType(Enum):
 
     @property
     def normal_balance(self) -> NormalBalance:
+        """The side (debit or credit) an increase to this account type posts to."""
         if self in (AccountType.ASSET, AccountType.EXPENSE):
             return NormalBalance.DEBIT
         return NormalBalance.CREDIT
@@ -54,3 +64,8 @@ class Account:
             raise ValidationError("account code must not be empty")
         if not self.name.strip():
             raise ValidationError("account name must not be empty")
+
+    @property
+    def display_label(self) -> str:
+        """A single-line ``"code name"`` label, handy for logs and CLI output."""
+        return f"{self.code} {self.name}"
