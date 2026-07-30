@@ -17,11 +17,11 @@ from __future__ import annotations
 
 import csv
 import io
-from datetime import date as date_cls
-from decimal import Decimal, InvalidOperation
+from decimal import InvalidOperation
 
 from ledgerkit.errors import ValidationError
 from ledgerkit.importers.base import ImportedTransaction
+from ledgerkit.importers.validation import parse_row_amount, parse_row_date
 from ledgerkit.money import Money
 
 REQUIRED_COLUMNS = ("date", "description", "amount")
@@ -43,10 +43,7 @@ class GenericCsvImporter:
 
     def _parse_row(self, row: dict[str, str | None], line_number: int) -> ImportedTransaction:
         raw_date = (row.get("date") or "").strip()
-        try:
-            parsed_date = date_cls.fromisoformat(raw_date)
-        except ValueError as exc:
-            raise ValidationError(f"row {line_number}: invalid date {raw_date!r}") from exc
+        parsed_date = parse_row_date(raw_date, line_number)
 
         description = (row.get("description") or "").strip()
         if not description:
@@ -54,7 +51,7 @@ class GenericCsvImporter:
 
         raw_amount = (row.get("amount") or "").strip()
         try:
-            amount = Money(Decimal(raw_amount))
+            amount = Money(parse_row_amount(raw_amount))
         except InvalidOperation as exc:
             raise ValidationError(f"row {line_number}: invalid amount {raw_amount!r}") from exc
 
