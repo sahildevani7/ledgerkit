@@ -12,10 +12,10 @@ from __future__ import annotations
 
 import argparse
 import sqlite3
-from datetime import date
 from decimal import Decimal, InvalidOperation
 
 from ledgerkit.accounts.repository import AccountRepository
+from ledgerkit.cli._common import parse_optional_date
 from ledgerkit.clock import Clock
 from ledgerkit.errors import ValidationError
 from ledgerkit.journal.entry import JournalEntry, Line
@@ -102,7 +102,7 @@ def run(args: argparse.Namespace, connection: sqlite3.Connection, clock: Clock) 
         assert account.id is not None
         lines.append(Line(account_id=account.id, amount=-Money(amount)))
 
-    entry_date = date.fromisoformat(args.entry_date) if args.entry_date else clock.today()
+    entry_date = parse_optional_date(args.entry_date) or clock.today()
     entry = JournalEntry(entry_date=entry_date, lines=tuple(lines), memo=args.memo)
     posted = post_entry(connection, entry, clock)
     print(f"posted entry {posted.id}")

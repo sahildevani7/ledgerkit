@@ -4,9 +4,9 @@ from __future__ import annotations
 
 import argparse
 import sqlite3
-from datetime import date
 
 from ledgerkit.accounts.repository import AccountRepository
+from ledgerkit.cli._common import parse_optional_date
 from ledgerkit.clock import Clock
 from ledgerkit.ledger.queries import account_balance, subtree_balance
 
@@ -50,7 +50,7 @@ def run(args: argparse.Namespace, connection: sqlite3.Connection, clock: Clock) 
     account_repo = AccountRepository(connection)
     account = account_repo.get_by_code(args.account_code)
     assert account.id is not None
-    as_of = date.fromisoformat(args.as_of) if args.as_of else None
+    as_of = parse_optional_date(args.as_of)
 
     if args.include_subaccounts:
         chart = account_repo.chart()

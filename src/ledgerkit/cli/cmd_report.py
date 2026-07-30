@@ -11,8 +11,8 @@ from __future__ import annotations
 
 import argparse
 import sqlite3
-from datetime import date
 
+from ledgerkit.cli._common import parse_optional_date
 from ledgerkit.clock import Clock
 from ledgerkit.reporting.account_activity_report import render_account_activity_report
 from ledgerkit.reporting.text import TextRenderer
@@ -58,7 +58,7 @@ def run_trial_balance(
     args: argparse.Namespace, connection: sqlite3.Connection, clock: Clock
 ) -> int:
     """Render every account's balance, split into debit and credit columns."""
-    as_of = date.fromisoformat(args.as_of) if args.as_of else None
+    as_of = parse_optional_date(args.as_of)
     print(render_trial_balance_report(connection, TextRenderer(), as_of=as_of))
     return 0
 
@@ -71,8 +71,8 @@ def run_account_activity(
     Raises:
         NotFoundError: If ``args.account_code`` doesn't match any account.
     """
-    start = date.fromisoformat(args.start) if args.start else None
-    end = date.fromisoformat(args.end) if args.end else None
+    start = parse_optional_date(args.start)
+    end = parse_optional_date(args.end)
     report = render_account_activity_report(
         connection, TextRenderer(), args.account_code, start=start, end=end
     )
