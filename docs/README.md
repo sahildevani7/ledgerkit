@@ -11,6 +11,8 @@
   dialect's exact format
 - [migrations.md](migrations.md) — how the schema migration runner works
   and how to add a migration
+- [dependencies.md](dependencies.md) — what's pinned, why, and why there's
+  no runtime dependency at all
 - [cli.md](cli.md) — every CLI command, its arguments, and examples
 - [error-handling.md](error-handling.md) — the error hierarchy, `code`
   values, and CLI exit codes
