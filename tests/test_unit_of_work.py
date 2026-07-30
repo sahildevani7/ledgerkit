@@ -78,3 +78,29 @@ def test_partial_batch_rolls_back_entirely(conn):
             raise ValueError("abort batch")
     rows = conn.execute("SELECT code FROM accounts").fetchall()
     assert rows == []
+
+
+def test_is_active_false_before_entering(conn):
+    uow = UnitOfWork(conn)
+    assert not uow.is_active
+
+
+def test_is_active_true_inside_block(conn):
+    uow = UnitOfWork(conn)
+    with uow:
+        assert uow.is_active
+
+
+def test_is_active_false_after_clean_exit(conn):
+    uow = UnitOfWork(conn)
+    with uow:
+        pass
+    assert not uow.is_active
+
+
+def test_is_active_false_after_exception(conn):
+    uow = UnitOfWork(conn)
+    with pytest.raises(ValueError):
+        with uow:
+            raise ValueError("boom")
+    assert not uow.is_active
