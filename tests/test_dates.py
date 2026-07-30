@@ -95,6 +95,11 @@ class TestPeriod:
         assert p.contains(date(2026, 1, 15))
         assert not p.contains(date(2026, 2, 1))
 
+    def test_dunder_contains_matches_contains(self):
+        p = Period(start=date(2026, 1, 1), end=date(2026, 1, 31))
+        assert date(2026, 1, 15) in p
+        assert date(2026, 2, 1) not in p
+
     def test_rejects_inverted_range(self):
         with pytest.raises(ValidationError):
             Period(start=date(2026, 2, 1), end=date(2026, 1, 1))

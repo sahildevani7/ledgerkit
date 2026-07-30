@@ -265,3 +265,18 @@ def test_allocate_preserves_currency():
     yen = Currency(code="JPY", exponent=0)
     parts = Money(Decimal("10"), yen).allocate([1, 1])
     assert all(part.currency == yen for part in parts)
+
+
+def test_format_spec_empty_matches_format_method():
+    m = Money(Decimal("10.50"))
+    assert f"{m}" == m.format()
+
+
+def test_format_spec_applies_to_amount_only():
+    m = Money(Decimal("10.50"))
+    assert f"{m:.1f}" == "10.5"
+
+
+def test_format_spec_with_padding():
+    m = Money(Decimal("5.00"))
+    assert f"{m:>10.2f}" == "      5.00"

@@ -129,3 +129,15 @@ def test_is_root_true_for_root(chart):
 
 def test_is_root_false_for_child(chart):
     assert not chart.is_root(AccountId(2))
+
+
+def test_len_matches_number_of_accounts(chart):
+    assert len(chart) == 5
+
+
+def test_dunder_contains_true_for_known_id(chart):
+    assert AccountId(1) in chart
+
+
+def test_dunder_contains_false_for_unknown_id(chart):
+    assert AccountId(999) not in chart
