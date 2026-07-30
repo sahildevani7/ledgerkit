@@ -11,7 +11,12 @@ from ledgerkit.clock import FixedClock
 from ledgerkit.errors import NotFoundError
 from ledgerkit.journal.entry import JournalEntry, Line
 from ledgerkit.journal.repository import JournalRepository
-from ledgerkit.ledger.queries import account_activity, account_balance
+from ledgerkit.ledger.queries import (
+    account_activity,
+    account_balance,
+    accounts_with_activity,
+    all_account_balances,
+)
 from ledgerkit.money import Money
 
 
@@ -150,3 +155,37 @@ def test_activity_reflects_multiple_lines_same_entry(migrated_conn, accounts, cl
     rows = account_activity(migrated_conn, opening.id)
     assert len(rows) == 2
     assert sorted(r.amount.amount for r in rows) == [Decimal("-20.00"), Decimal("-10.00")]
+
+
+def test_all_account_balances_includes_zero_activity_accounts(migrated_conn, accounts):
+    checking, opening = accounts
+    balances = all_account_balances(migrated_conn)
+    assert balances[checking.id].is_zero()
+    assert balances[opening.id].is_zero()
+
+
+def test_all_account_balances_matches_individual_queries(migrated_conn, accounts, clock):
+    checking, opening = accounts
+    _post(migrated_conn, clock, checking.id, opening.id, "42.00", date(2026, 6, 1))
+    balances = all_account_balances(migrated_conn)
+    assert balances[checking.id] == account_balance(migrated_conn, checking.id)
+    assert balances[opening.id] == account_balance(migrated_conn, opening.id)
+
+
+def test_all_account_balances_as_of_date(migrated_conn, accounts, clock):
+    checking, opening = accounts
+    _post(migrated_conn, clock, checking.id, opening.id, "10.00", date(2026, 6, 1))
+    _post(migrated_conn, clock, checking.id, opening.id, "20.00", date(2026, 7, 1))
+    balances = all_account_balances(migrated_conn, as_of=date(2026, 6, 15))
+    assert balances[checking.id] == Money(Decimal("10.00"))
+
+
+def test_accounts_with_activity_empty_when_nothing_posted(migrated_conn, accounts):
+    assert accounts_with_activity(migrated_conn) == []
+
+
+def test_accounts_with_activity_lists_touched_accounts(migrated_conn, accounts, clock):
+    checking, opening = accounts
+    _post(migrated_conn, clock, checking.id, opening.id, "10.00", date(2026, 6, 1))
+    touched = accounts_with_activity(migrated_conn)
+    assert set(touched) == {checking.id, opening.id}
