@@ -121,3 +121,46 @@ def test_deactivate_missing_account_returns_exit_code_one(fresh_db):
 def test_accounts_requires_subcommand(fresh_db):
     with pytest.raises(SystemExit):
         main(["--db", fresh_db, "accounts"])
+
+
+def test_show_displays_account_details(fresh_db, capsys):
+    main(["--db", fresh_db, "accounts", "create", "1000", "Checking", "asset"])
+    capsys.readouterr()
+    exit_code = main(["--db", fresh_db, "accounts", "show", "1000"])
+    assert exit_code == 0
+    output = capsys.readouterr().out
+    assert "1000 Checking" in output
+    assert "asset" in output
+    assert "children: none" in output
+
+
+def test_show_displays_path(fresh_db, capsys):
+    main(["--db", fresh_db, "accounts", "create", "1000", "Assets", "asset"])
+    main(["--db", fresh_db, "accounts", "create", "1100", "Cash", "asset", "--parent", "1000"])
+    capsys.readouterr()
+    main(["--db", fresh_db, "accounts", "show", "1100"])
+    output = capsys.readouterr().out
+    assert "Assets > Cash" in output
+
+
+def test_show_lists_children(fresh_db, capsys):
+    main(["--db", fresh_db, "accounts", "create", "1000", "Assets", "asset"])
+    main(["--db", fresh_db, "accounts", "create", "1100", "Cash", "asset", "--parent", "1000"])
+    capsys.readouterr()
+    main(["--db", fresh_db, "accounts", "show", "1000"])
+    output = capsys.readouterr().out
+    assert "1100 Cash" in output
+
+
+def test_show_missing_account_returns_exit_code_one(fresh_db):
+    exit_code = main(["--db", fresh_db, "accounts", "show", "no-such-code"])
+    assert exit_code == 1
+
+
+def test_show_reflects_inactive_status(fresh_db, capsys):
+    main(["--db", fresh_db, "accounts", "create", "1000", "Checking", "asset"])
+    main(["--db", fresh_db, "accounts", "deactivate", "1000"])
+    capsys.readouterr()
+    main(["--db", fresh_db, "accounts", "show", "1000"])
+    output = capsys.readouterr().out
+    assert "inactive" in output
