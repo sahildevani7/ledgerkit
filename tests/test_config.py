@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from ledgerkit.config import LedgerConfig, find_config_file, load_config
+from ledgerkit.config import LedgerConfig, find_config_file, load_config, write_config
 from ledgerkit.errors import ConfigError
 
 
@@ -113,3 +113,38 @@ def test_find_config_file_prefers_closest_ancestor(tmp_path: Path):
     nested.mkdir()
     (nested / "ledgerkit.toml").write_text('db_path = "inner.db"\n')
     assert find_config_file(nested) == nested / "ledgerkit.toml"
+
+
+def test_write_config_creates_file(tmp_path: Path):
+    path = tmp_path / "ledgerkit.toml"
+    write_config(path, LedgerConfig())
+    assert path.exists()
+
+
+def test_write_config_round_trips_defaults(tmp_path: Path):
+    path = tmp_path / "ledgerkit.toml"
+    write_config(path, LedgerConfig())
+    assert load_config(path=path) == LedgerConfig()
+
+
+def test_write_config_round_trips_custom_values(tmp_path: Path):
+    path = tmp_path / "ledgerkit.toml"
+    config = LedgerConfig(
+        db_path="custom.db", fiscal_year_start_month=4, default_currency_code="CAD"
+    )
+    write_config(path, config)
+    assert load_config(path=path) == config
+
+
+def test_write_config_escapes_special_characters(tmp_path: Path):
+    path = tmp_path / "ledgerkit.toml"
+    config = LedgerConfig(db_path='weird "quoted" \\path.db')
+    write_config(path, config)
+    assert load_config(path=path) == config
+
+
+def test_write_config_overwrites_existing_file(tmp_path: Path):
+    path = tmp_path / "ledgerkit.toml"
+    write_config(path, LedgerConfig(db_path="first.db"))
+    write_config(path, LedgerConfig(db_path="second.db"))
+    assert load_config(path=path).db_path == "second.db"
