@@ -13,7 +13,7 @@ from datetime import date
 
 from ledgerkit.accounts.model import Account
 from ledgerkit.accounts.repository import AccountRepository
-from ledgerkit.ledger.queries import account_balance
+from ledgerkit.ledger.queries import all_account_balances
 from ledgerkit.money import Money
 
 
@@ -49,10 +49,11 @@ def build_trial_balance(
     connection: sqlite3.Connection, *, as_of: date | None = None
 ) -> TrialBalance:
     accounts = AccountRepository(connection).list_all()
+    balances = all_account_balances(connection, as_of=as_of)
     rows: list[TrialBalanceRow] = []
     for account in accounts:
         assert account.id is not None
-        balance = account_balance(connection, account.id, as_of=as_of)
+        balance = balances[account.id]
         if balance.is_positive():
             debit, credit = balance, Money.zero(balance.currency)
         elif balance.is_negative():
