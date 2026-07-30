@@ -53,3 +53,31 @@ and queries that filter by date (`account_balance(..., as_of=...)`,
 not the order they were inserted in. There's currently no concept of a
 "closed" period that would reject a late entry; every date is open to
 posting.
+
+## Why does `Account` keep its `id` as the last field instead of the first?
+
+`Account(code, name, type, parent_id, is_active, id)` puts `id` last so
+that constructing a new, not-yet-persisted account reads naturally —
+`Account(code="1000", name="Checking", type=AccountType.ASSET)` — without
+having to pass `id=None` explicitly or skip positional arguments. Every
+other entity (`JournalEntry`, `Line`) follows the same convention: the
+fields a caller provides come first, the field the repository assigns
+comes last, defaulting to `None`.
+
+## Does ledgerkit validate that an account code follows a particular numbering scheme?
+
+No. `Account.code` just has to be non-empty; there's no enforced
+numbering convention (1000s for assets, 5000s for expenses, or anything
+else). Plenty of real charts of accounts follow a convention like that,
+but it's a convention the *user* of the library chooses and follows, not
+a rule ledgerkit enforces — codes are opaque strings as far as the model
+is concerned.
+
+## Why is the demo script under `scripts/` instead of `src/ledgerkit/`?
+
+`scripts/seed_demo_ledger.py` is a developer convenience, not something
+`ledgerkit` (the package) imports or the CLI wires up — running it
+requires the library to already be installed, the same way a user's own
+script would. Keeping it outside `src/ledgerkit/` makes that boundary
+explicit: nothing under `src/` depends on it, and it could be deleted
+without affecting the installed package at all.
