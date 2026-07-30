@@ -74,6 +74,11 @@ def add_arguments(
     show_parser.add_argument("code")
     show_parser.set_defaults(handler=run_show)
 
+    rename_parser = account_subparsers.add_parser("rename", help="rename an account")
+    rename_parser.add_argument("code")
+    rename_parser.add_argument("new_name")
+    rename_parser.set_defaults(handler=run_rename)
+
     return parser
 
 
@@ -147,4 +152,13 @@ def run_show(args: argparse.Namespace, connection: sqlite3.Connection, clock: Cl
             print(f"  {child.display_label}")
     else:
         print("children: none")
+    return 0
+
+
+def run_rename(args: argparse.Namespace, connection: sqlite3.Connection, clock: Clock) -> int:
+    repo = AccountRepository(connection)
+    account = repo.get_by_code(args.code)
+    assert account.id is not None
+    renamed = repo.rename(account.id, args.new_name)
+    print(f"renamed {account.code} to {renamed.name!r}")
     return 0
